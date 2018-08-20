@@ -1,0 +1,144 @@
+ <html>
+ 	<head>
+ 		<meta name="csrf-token" content="csrf-token">
+ 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+ 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+	    
+	   <script type="text/javascript">
+	    var mousePressed = false;
+		var lastX, lastY;
+		var ctx;
+
+		var csrftoken = $('meta[name=csrf-token]').attr('content')
+		$.ajaxSetup({
+		    beforeSend: function(xhr, settings) {
+		        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+		            xhr.setRequestHeader("X-CSRFToken", csrftoken)
+		        }
+		    }
+		})
+
+		function init() {
+		    canvas = document.getElementById('myCanvas')
+		    ctx = canvas.getContext("2d");
+		    ctx.fillStyle = 'white';
+		    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		    $('#myCanvas').mousedown(function (e) {
+		        mousePressed = true;
+		        Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, false);
+		    });
+
+		    $('#myCanvas').mousemove(function (e) {
+		        if (mousePressed) {
+		            Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, true);
+		        }
+		    });
+
+		    $('#myCanvas').mouseup(function (e) {
+		        mousePressed = false;
+		    });
+			    $('#myCanvas').mouseleave(function (e) {
+		        mousePressed = false;
+		    });
+		}
+
+		function Draw(x, y, isDown) {
+		    if (isDown) {
+		        ctx.beginPath();
+		        ctx.strokeStyle = $('#selColor').val();
+		        ctx.lineWidth = $('#selWidth').val();
+		        ctx.lineJoin = "round";
+		        ctx.moveTo(lastX, lastY);
+		        ctx.lineTo(x, y);
+		        ctx.closePath();
+		        ctx.stroke();
+		    }
+		    lastX = x; lastY = y;
+		}
+			
+		function clearArea() {
+		    // Use the identity matrix while clearing the canvas
+		    ctx.setTransform(1, 0, 0, 1, 0, 0);
+		    ctx.fillStyle = 'white';
+		    ctx.fillRect(0, 0, canvas.width, canvas.height);
+			document.getElementById("result").style.display = "none"
+
+		}
+		 
+
+		function save() {
+	        document.getElementById("canvasimg").style.border = "2px solid";
+	        var dataURL = canvas.toDataURL();
+	        document.getElementById("canvasimg").src = dataURL;
+	        document.getElementById("canvasimg").style.display = "inline";
+		}
+
+		function UploadPic() {
+    		// Generate the image data
+		    var Pic = document.getElementById("myCanvas").toDataURL("image/png");
+		    Pic = Pic.replace(/^data:image\/(png|jpg);base64,/, "")
+		    // Sending the image data to Server
+		    $.ajax({
+		        type: 'POST',
+		        url: 'http://18.207.200.32:5000/charrecognition',
+		        data: JSON.stringify({ image : Pic }),
+		        contentType: 'application/json;charset=UTF-8',
+		        dataType: 'json',
+		        success: function(msg,status, jqXHR){
+        			  var a = JSON.parse(jqXHR.responseText);
+        			  var prediction = a.prediction
+        			  document.getElementById("pred").innerHTML = prediction
+        			  document.getElementById("result").style.display = "inline"
+
+
+    			}
+		    });
+		}
+	    </script>
+	</head>
+    <body onload="init();">
+    	<div class="container">
+    		<div class="row">
+	    		<div class="col-md-12  text-center" style="margin: 2% 0% 2% 0%;">
+	    			<h1>Character Predictor</h1>
+	    		</div>
+	    	</div>
+    		<div class="row">
+    			<div class="col-md-4"></div>
+	    		<div class="col-md-4 text-center">
+	    			Line width : <select id="selWidth">
+			            <option value="11">11</option>
+			            <option value="13">13</option>
+			            <option value="15">15</option>
+			            <option value="20" selected="selected">20</option>
+			            <option value="25">25</option>
+		        	</select>
+		        	Color : <select id="selColor">
+			            <option value="black" selected="selected">black</option>
+			            <option value="blue">blue</option>
+			            <option value="red">red</option>
+			            <option value="green">green</option>
+			            <option value="gray">gray</option>
+		        	</select>
+		        	<canvas id="myCanvas" width="280" height="280" style="border:2px solid black;margin:5%"></canvas>
+	    			<button class="btn btn-danger" onclick="javascript:clearArea();return false;">Clear Canvas</button>
+			        <button class="btn btn-primary" onclick="javascript:UploadPic();return false;">Predict</button>
+			        <br><br>
+			        <div id="result" class="alert alert-success" style="display: none">
+					   Looks like, You have entered a : <strong id="pred"></strong>
+					</div>
+	    		</div>
+	    	</div>
+	    	<div class="row" style="margin-top: 2%">
+	    		<div class="col-md-12 text-center">
+	    			<a href="https://github.com/adityajn105/Character-Recognition-webapp">
+	    				<button class="btn btn-success">View Project/Code on Github.</button>
+	    			</a>
+	    		</div>
+	    	</div>
+    	</div>
+	</body>
+</html>
