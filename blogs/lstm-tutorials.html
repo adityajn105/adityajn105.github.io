@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LSTM Tutorial | Blogs | Aditya Jain</title>
+
+    <meta name="description" content="LSTM stands for Long Short Term Memory"/>
+	<meta name="keywords" content="adityajn105, aditya, jain, data science, deep learning, machine learning, nlp, lstm" />
+	<meta name="author" content="Aditya Jain" />
+	<!-- Facebook and Twitter integration -->
+	<meta property="og:title" content="LSTM Tutorial | Blog by Aditya Jain"/>
+	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
+	<meta property="og:url" content="https://adityajn105.github.io/blogs/lstm-tutorial.html"/>
+	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
+	<meta property="og:description" content="LSTM stands for Long Short Term Memory."/>
+	<meta name="twitter:title" content="LSTM Tutorial | Blog by Aditya Jain" />
+	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
+	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/lstm-tutorial.html" />
+
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-123324949-1');
+	</script>
+	<script>
+		var disqus_config = function () {
+		this.page.url = "https://adityajn105.github.io/blogs/lstm-tutorial.html";  // Replace PAGE_URL with your page's canonical URL variable
+		this.page.identifier = 2; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+		};
+		(function() { // DON'T EDIT BELOW THIS LINE
+		var d = document, s = d.createElement('script');
+		s.src = 'https://adityajn105.disqus.com/embed.js';
+		s.setAttribute('data-timestamp', +new Date());
+		(d.head || d.body).appendChild(s);
+		})();
+	</script>
+	<noscript>
+		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+	</noscript>
+</head>
+<body>
+    <div id="mobile-menu-open" class="shadow-large">
+        <i class="fa fa-bars" aria-hidden="true"></i>
+    </div>
+    <!-- End #mobile-menu-toggle -->
+    <header>
+        <div id="mobile-menu-close">
+            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
+        </div>
+        <ul id="menu" class="shadow">
+            <li>
+                <a href="https://adityajn105.github.io/">Back</a>
+            </li>
+            <li>
+                <a href="#contact">Contact</a>
+            </li>
+        </ul>
+    </header>
+
+    <div id="blog">
+    	<div class="container">
+            <div class="row">
+	    		<h1>LSTM - Long Short Term Memory</h1>
+		    	<div id="blog-body">
+		    		<div class="col-md-8">
+		    			<h5>18 October 2018 | Aditya Jain</h5>
+			    		<p>
+				    		I think everybody now a days is familiar with working of neural networks and even most of us know how to efficiently apply them to solve problems. As we go by definition, "An artificial neural network is an interconnected group of nodes, akin to the vast network of neurons in a brain. Here, each circular node represents an artificial neuron and an arrow represents a connection from the output of one artificial neuron to the input of another.". There has been a lot of good material out there to learn about deep learning or say neural network in general. I myself has studied about it through <a href="http://neuralnetworksanddeeplearning.com/" target="_blank">neural networks and deep learning book</a> by Michael Nielsen and I prefer people do the same before moving ahead in this blog. In this blog I will move a step ahead and try to explain working of RNN and LSTM based on my understanding. This blog is basically a summary of blog by Christopher Olah's blog titled <a href="http://colah.github.io/posts/2015-08-Understanding-LSTMs/" target="_blank">Understanding LSTM Networks.</a> So for detailed explanation refer to his blog.
+						</p>
+                        <br>
+                        <h2>RNN: Recursive Neural Networks</h2>
+                        <p>
+                            I am assuming people already knew about neural networks, so they will be easily able to understand how previous input to the neural network does not affect the next input at all during predictions.
+                            <br><br>
+                            Think about a human in general, they don not start thinking from scratch every sec. You do not throw everything away and start thinking from scratch again. Traditional Neural Networks can't do this and it seems a major short coming, For example imagine you want to classify what kind of event is happening at every point in movie. It is unclear how traditional neural network could use its reasoning about previous event.
+                            <br><br>
+                            RNN resolve this issue. They are networks with loops in them, allowing information to persist.
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/RNN-rolled.png" style="height: 30%;width: 30%;" class="img-responsive" alt="general RNN">
+                                </div>
+                                <div class="col-md-8">
+                                    A - Neural Network<br>
+                                    X<sub>t</sub> - Some Input<br>
+                                    h<sub>t</sub> - output a value
+                                </div>
+                            </div>
+                            RNN look mysterious but it turns out that they aren't all that different than a neural networks. A RNN van be thought as a multiple copies of same network, each passing a message to successor.
+                            <div class="row">
+                                <div class="col-md-8 text-center">
+                                    <br>
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/RNN-unrolled.png " style="height: 100%;width: 100%;" class="img-responsive" alt="unrolled RNN">
+                                </div>
+                                <div class="col-md-4">
+                                    <h4>Unrolled RNN</h4>
+                                    A - Neural Network<br>
+                                    X<sub>t</sub> - Some Input<br>
+                                    h<sub>t</sub> - output a value
+                                </div>
+                            </div>
+                            <br>
+                            Chain like nature reveals RNN are related to sequences and list. There have been incredible success in applying RNN to variety of problems like speech recognition, language modelling, transition, image captioning.
+                            <br>
+                            <h3>Problems with RNN</h3>
+                            Sometimes we only need to look at recent info to perform present task. But there are also cases where we need more context. Unfortunately as gap grows, RNN become unable to learn. In theory RNN are absolutely capable of handling long term dependencies. Sadly in practice, RNN don't seem to be able to learn them. This is due to unstable gradient problem (gradient gets smaller and smaller as it propagates back through layers.)
+                            This makes learning in early layers extremely slow.
+                            <br><br>
+                            Thankfully, LSTM don't have this problem.
+                        </p>
+                        <h2>LSTM Networks: Long Short Term Memory Networks</h2>
+                        <p>
+                            LSTM are special kind of RNN capable of learning long-term dependencies. They work on variety of problems and are widely used. LSTM are explicitly designed to avoid long-term dependencies problem. Removing information for long period of time is practically their default behaviour.
+                            <br><br>
+                            In standard RNNs, this repeating module will have a very simple structure, such as single tanh layer.
+                            <div class="row">
+                                <div class="col-md-8 col-md-push-2 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM3-SimpleRNN.png" class="img-responsive" alt="Repeating module in standard RNN contains a single layer.">
+                                    <br>
+                                    <b>Repeating module in standard RNN contains a single layer.</b>
+                                </div>
+                            </div>
+                            <br>
+                            LSTM also have this chain like structure, but repeating module has different structure. Instead of having single NN layer, there are 4 layers, interacting in special way.
+                            <br><br>
+                            <div class="row">
+                                <div class="col-md-10 col-md-push-1 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM3-chain.png" class="img-responsive" alt="The repeating module in an LSTM contains four interacting layers.">
+                                    <br>
+                                    <b>The repeating module in an LSTM contains four interacting layers.</b>
+                                </div>
+                            </div>
+                            The key to LSTM is the cell state, horizontal line running through top. LSTM have ability to add and remove information to cell state, carefully regulated by structure called as gates. Gates are way to let information through. Gates are composed to sigmoid neural network and a pointwise multiplication operation.
+                            <br><br>
+                            Sigmoid layer outputs a number between 0 and 1, describing how much component should be let through. 0 means 'let nothing through' and 1 means 'let everyhing through'.
+                            <br>
+                            <div class="row">
+                                <div class="col-md-8 col-md-push-2 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM2-notation.png" class="img-responsive" alt="The repeating module in an LSTM contains four interacting layers.">
+                                </div>
+                            </div>
+                            <br>
+                            LSTM have three of these gates and control state. So, lets discuss about them one by one.
+                            <br>
+                            <h3>1. Forget Layer : First Step in our LSTM is decide what information to let through and what to throw away from cell state.</h3>
+                            The decision is made by sigmoid layer "forget gate" layer. It looks at h<sub>t-1</sub> and X<sub>t</sub> and output number between 0 and 1 for each number in cell state ( C<sub>t-1</sub> ).
+                            <br><br>
+                            1 means "completely keep this" while 0 represent "completely get rid of this".
+                            <br>
+                            <div class="row">
+                                <div class="col-md-8 col-md-push-2 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM3-focus-f.png" class="img-responsive" alt="Forget gate">
+                                </div>
+                            </div>
+                            <br>
+                            Example: in language model trying to predict next word based on previous ones. Cell might include information of gender of present subject so correct pronoun can be used. We see a new subject, we want to forget gender of old subject.
+                            <br><br>
+                            <h3>2. Stage Update Layer : The next step is to decide what new information we're going to store in cell state. This has 2 parts</h3>
+                            First a sigmoid layer called "input gate layer" decide which values will be updated.
+                            <br><br>
+                            Next, a tanh layer creates a vector of new candidate values, &Ccirc;<sub>t</sub>. Next we will combine these two to create an update to state.
+                            <br>
+                            <div class="row">
+                                <div class="col-md-8 col-md-push-2 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM3-focus-i.png" class="img-responsive" alt="stage update layer">
+                                </div>
+                            </div>
+                            <br>
+                            In our example: we want to add the gender of new subject to the cell state, to replace the one's we are forgetting.
+                            <br><br>
+                            <h3>3. Now its time to update the old cell state, C<sub>t-1</sub> into the new cell state c<sub>t</sub></h3>
+                            First we multiply old cell state C<sub>t-1</sub> by f<sub>t</sub>, forgetting thing we decide to forget earlier.
+                            <br><br>
+                            Then, we add i<sub>t</sub>*&Ccirc;<sub>t</sub>. This is new candidate values scaled by how much we decide to update each state value.
+                            <br>
+                             <div class="row">
+                                <div class="col-md-8 col-md-push-2 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM3-focus-C.png" class="img-responsive" alt="cell state update">
+                                </div>
+                            </div>
+                            <br>
+                            Example: In language model, this is actually when we would actually drop information about the old subject gender and add the new information.
+                            <br><br>
+                            <h3>4. Finally, we need to decide what we are going to output.</h3>
+                            This output will be based on our cell state, but will be filtered verion of it. First we run a sigmoid layer which decides what part of the cell state we're going to output.
+                            <br><br>
+                            Then we put cell state through tanh (to push value between 1 and -1) and multiply it by the output of sigmoid gate, so that we only output that part we decided to.
+                            <br>
+                             <div class="row">
+                                <div class="col-md-8 col-md-push-2 text-center">
+                                    <img src="http://colah.github.io/posts/2015-08-Understanding-LSTMs/img/LSTM3-focus-o.png" class="img-responsive" alt="cell state output layer">
+                                </div>
+                            </div>
+                            <br>
+                            Example: In language model, since it just saw a subject it might want to output information relevant to a verb, in case that's what is coming next. For Example it might output whether subject is singular or plural, so that we know what form a verb should be conjugated into if that's what follow next.
+                        </p>
+                        <h2> Variants on LSTM</h2>
+                        <p>
+                            This was a pretty normal LSTM. But not all LSTM are same. Almost every LSTM uses slightly different version. Differences are minor.
+                            <br><br>
+                            All versions are pretty much same, but some worked better than the LSTM on certain task.
+                        </p> 
+                        <h2>More Resources</h2>
+                        <ol>
+                            <li><a href="http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-1-introduction-to-rnns/" target="_blank">Recurrent Neural Networks tutorial by Denny Britz</a></li>
+                            <li><a href="http://colah.github.io/posts/2015-08-Understanding-LSTMs/" target="_blank">Understanding LSTMs by Colah</a></li>
+                            <li><a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank">The Unreasonable Effectiveness of Recurrent Neural Networks by Andrej Karpathy</a></li>
+                            <li><a href="https://github.com/adityajn105/Fun-with-LSTMs-RNNs" target="_blank">Some Example for LSTMs and RNNs</a></li>
+
+                        </ol>
+
+					</div>
+		    	</div>
+		    	<div class="col-md-8" id="disqus_thread"></div>
+		    </div>
+		</div>
+    </div>
+
+    <div id="contact">
+        <h2>Get in Touch</h2>
+        <div id="contact-form">
+            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
+                <input type="hidden" name="_subject" value="Contact request from personal website" />
+                <input type="email" name="_replyto" placeholder="Your email" required>
+                <textarea name="message" placeholder="Your message" required></textarea>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+        <!-- End #contact-form -->
+    </div>
+    <!-- End #contact -->
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-5 copyright">
+                    <p>
+                        Copyright &copy; 2018 Aditya Jain
+                    </p>
+                </div>
+                <div class="col-sm-2 top">
+                    <span id="to-top">
+                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <div class="col-sm-5 social">
+                    <ul>
+                        <li>
+                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- End footer -->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="/js/scripts.min.js"></script>
+    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+</body>
+</html>
