@@ -24,12 +24,6 @@
     <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
     <link rel="stylesheet" href="/libs/font-awesome/css/font-awesome.min.css">
     
-    <!-- For MathJax -->
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
-    <script type="text/x-mathjax-config">
-  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
-	</script>
-    
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/styles.css" rel="stylesheet">
 
@@ -54,9 +48,19 @@
 		(d.head || d.body).appendChild(s);
 		})();
 	</script>
+
+	 <!-- For MathJax -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+    <script type="text/x-mathjax-config">
+  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+	</script>
 	<noscript>
 		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
 	</noscript>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="/js/scripts.min.js"></script>
+    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
 </head>
 <body>
     <div id="mobile-menu-open" class="shadow-large">
@@ -181,7 +185,7 @@
                             	<li><b>Value Iteration</b> : Finding optimal value function `+` one policy extraction. There is not repeat of the two because once the value function is optimal, then policy out of it should also be optimal.</li>
                             </ol>
                             <br>
-                            <h3>1. Policy Iteration</h3>
+                             <h3>1. Policy Iteration</h3>
                             <b>Problem</b> : Given a policy `pi`, Find the optimal policy `pi^ast`.<br>
                             <div class="row">
                                 <div class="col-md-1 text-center">
@@ -236,8 +240,7 @@
                         	</ul>
                         	<br>
                         	<b>Example:</b> Below is the example code for policy iteration for Frozen Lake environment using OpenAI gym library. Play with code and put doubts in comment section below.<br>
-                        	<script src="https://gist.github.com/adityajn105/f3d576866cbafd8e63d447e26ecac007.js?file=policy_iteration.py"></script>
-
+                        	<script src="https://gitlab.com/snippets/1765536.js"></script>
                         	<h3>2. Value Iteration</h3>
                         	<b>Problem</b> : Find Optimal Policy `pi^ast`.<br>
                         	<b>Solution</b> : Iterative application of Bellman optimality backup.<br>
@@ -259,7 +262,7 @@
                             	<li>After we finally get optimal value function, we will extract policy using greedy method from that value function. We have to do this only once because optimal value function always gives optimal policy.</li>
                             </ul>
                             <b>Example : </b>Below is the example code for value iteration for Frozen Lake environment using OpenAI gym library. Play with code and put doubts in comment section below.<br>
-                        	<script src="https://gist.github.com/adityajn105/f3d576866cbafd8e63d447e26ecac007.js?file=value_iteration.py"></script>
+                        	<script src="https://gitlab.com/snippets/1765537.js"></script>
                         	<br>
                         	<h3>Conclusions</h3>
                         	<table>
@@ -303,7 +306,7 @@
                             <li><a href="https://www.youtube.com/watch?v=aAkFtRxeP7c" target="_blank">Bellman equation tutorial for reinforcement Learning</a></li>
                             <li><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes" target="_blank">Example codes and problems to understand policy optimization better.</a></li>
                         </ol>
-					</div>
+		    		</div>
 		    	</div>
 		    	<div class="col-md-8" id="disqus_thread"></div>
 		    </div>
@@ -364,8 +367,6 @@
     </footer>
     <!-- End footer -->
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="/js/scripts.min.js"></script>
-    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+    
 </body>
 </html>
