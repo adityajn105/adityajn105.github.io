@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Policy Gradient and Actor-Critic Algorithm | Blogs | Aditya Jain</title>
+
+    <meta name="description" content="Policy Gradient and Actor-Critic Algorithm"/>
+	<meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, actor-critic, policy-gradient" />
+	<meta name="author" content="Aditya Jain" />
+	<!-- Facebook and Twitter integration -->
+	<meta property="og:title" content="Policy Gradient and Actor-Critic Algorithm | Blog by Aditya Jain"/>
+	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
+	<meta property="og:url" content="https://adityajn105.github.io/blogs/actor-critic.html"/>
+	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
+	<meta property="og:description" content="Policy Gradient and Actor-Critic Algorithm"/>
+	<meta name="twitter:title" content="Policy Gradient and Actor-Critic Algorithm | Blog by Aditya Jain" />
+	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
+	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/actor-critic.html" />
+
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+	<link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
+    <link rel="stylesheet" href="../libs/font-awesome/css/font-awesome.min.css">
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/styles.css" rel="stylesheet">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-123324949-1');
+	</script>
+	
+
+	 <!-- For MathJax -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+    <script type="text/x-mathjax-config">
+  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+	</script>
+	<noscript>
+		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+	</noscript>
+</head>
+<body>
+    <div id="mobile-menu-open" class="shadow-large">
+        <i class="fa fa-bars" aria-hidden="true"></i>
+    </div>
+    <!-- End #mobile-menu-toggle -->
+    <header>
+        <div id="mobile-menu-close">
+            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
+        </div>
+        <ul id="menu" class="shadow">
+            <li>
+                <a href="https://adityajn105.github.io/">Back</a>
+            </li>
+            <li>
+                <a href="#contact">Contact</a>
+            </li>
+        </ul>
+    </header>
+
+    <div id="blog">
+    	<div class="container">
+            <div class="row">
+	    		<h1>Policy Gradient and Actor-Critic Algorithm</h1>
+		    	<div id="blog-body">
+		    		<div class="col-md-8">
+	    				<h5>24 April 2019 | Aditya Jain</h5>
+		    			<p>
+			    		Today most successful reinforcement algorithm A3C, PPO etc belong to the policy gradient family of algorithm often more specifically to the actor-critic family. But before going into mathematics of these algorithm, you must have basic knowledge of Deep Q Learning(below link).
+			                <br><br>
+			                <a href='https://adityajn105.github.com/blogs/deep-q-learning.html'>Deep Q Learning</a>
+			                <br><br>
+			                Before going any further, let's understand some drawbacks of Q Learning.
+			                <br><br>
+			                1. The policy implied by Deep Q-Learning is deterministic. This means Q-Learning can't learn stochastic policies, which can be useful in some environments. It means we also need to create our own exploration strategies.
+			                <br>
+			                2. There is no way to handle continuous action spaces in Q-Learning. In policy gradient handling continuous action spaces is relatively easy.
+			                <br>
+			                3. In policy gradient we are calculating the gradient of policy itself. By contrast Q-Learning we are improving value estimates of different actions in a state, which implicitly improves policy. Improving policy directly is more efficient.
+			                <br><br>
+			              </p>
+						    		<h2>Policy Gradient (REINFORCE Algorithm) : </h2>
+						    		<p>
+			                  Let's call `\pi \theta(a|s)` the probability of taking action a in state s. `\theta` represents parameters of policy (the weights of Neural Network). The goal is to update `\theta` to values that make `\pi \theta` the optimal policy. `\theta_t` represent the values of `theta` in iteration t. We want to find out the update rule that takes use from `\theta_t` to `\theta_{t+1}` to optimize our policy.
+			                  <br><br>
+			                  For a discrete action space we will use neural network with softmax output unit, so that output can be thought of as a probability of taking each action in state. Clearly, if action `a^\star` is optimal action, we want `\pi\theta(a^\star | s)` as close to 1 as possible. For this we can simply perform an gradient ascent to update `\theta` in the following way:
+			                  $$ \theta_{t+1} = \theta_t + \alpha \nabla \pi_{\theta_t}(a^\star|s) $$
+			                  We can view `\nabla \pi \theta_t(a^\star|s)` as direction in which we must move `\theta_t` to increase value of `\pi\theta(a^\star | s)`. Note we are using gradient ascent to increase a value. Thus one way to view this update is that we keep “pushing” towards more of action `a^\star` in our policy, which is indeed what we want.
+			                  <br><br>
+			                  Of course, in practice, we won’t know which action is best… After all that’s what we’re trying to figure out in the first place! To get back to the metaphor of “pushing”, if we don’t know which action is optimal, we might “push” on suboptimal actions and our policy will never converge. One solution would be to “push” on actions in a way that is proportional to our guess of the value of these actions. We will call our guess of the value of action a in state s Q̂(s,a). We get the following gradient ascent update, that we can now apply to each action in turn instead of just to the optimal action:
+			                  $$ \theta_{t+1} = \theta_t + \alpha \hat Q_t(s,a) \nabla \pi_{\theta_t}(a|s) $$
+			                  Of course, in practice, our agent is not going to choose actions uniformly at random, which is what we implicitly assumed so far. Rather, we are going to follow the very policy `\pi\theta` that we are trying to train! This is called training on-policy. There are two reasons why we might want to train on-policy:
+			                  <br>
+			                  1. We accumulate more rewards even as we train, which is something we might value in some contexts.
+			                  <br>
+			                  2. It allows us to explore more promising areas of the state space by not exploring purely randomly but rather closer to our current guess of the optimal actions.
+			                  <br><br>
+			                  This creates a problem with our current training algorithm, however: although we are going to “push” stronger on the actions that have a better value, we are also going to “push” more often on whichever actions happen to have higher values of πθ to begin with (which could happen due to chance or bad initialization)! These actions might end up winning the race to the top in spite of being bad. This means that we need to compensate for the fact that more probable actions are going to be taken more often. How do we do this? Simple: we divide our update by the probability of the action. This way, if an action is 4x more likely to be taken than another, we will have 4x more gradient updates to it but each will be 4x smaller.
+			                  $$ \theta_{t+1} = \theta_t + \alpha \frac{\hat Q_t(s,a) \nabla \pi_{\theta_t}(a|s)}{\pi_\theta(a|s)} $$
+			                  Now, we can write  `\frac{\nabla \pi_{\theta_t}(a|s)}{\pi_\theta(a|s)}` as `\nabla_\theta log \pi_theta(s|a) ` and using return `v_t` as an unbiased sample of `\hat Q_t(s,a)`.
+			                  $$ \theta_{t+1} = \theta_t + \alpha v_t \nabla_\theta log \pi_\theta(s|a) $$
+			                  A widely used variation of REINFORCE is to subtract a baseline value from the return `v_t` to reduce the variance of gradient estimation while keeping the bias unchanged (Remember we always want to do this when possible). As it turns out, REINFORCE will still work perfectly fine if we subtract any function from Q̂(s,a) as long as that function does not depend on the action. This means that using the Â function instead of the Q̂ function is perfectly allowable. For example, a common baseline is to subtract state-value from action-value, and if applied, we would use advantage A(s,a) = Q(s,a) – V(s) in the gradient ascent update. 
+			                  $$ \theta_{t+1} = \theta_t + \alpha \hat A_t(s|a) \nabla_\theta log \pi_\theta(s|a) $$
+			                  where,
+			                  <br> `A_t(s,a) = R_t - b` (Return - baseline)
+			                  <br> `\pi_\theta(s|a) = policy`
+			                  <br><br>
+			                </p>
+			              <h4>Algorithm for Monte Carlo REINFORCE Algoirthm:</h4>
+			              <ul>
+			                <li>Initialize `\theta` arbitarily, baseline b</li>
+			                <li>For each episode `{s_1,a_1,r_2,....,s_{T-1}, a_{T-1}, r_T}`</li>
+			                <li>
+			                  <ul>
+			                    <li> for t= 1 to T-1</li>
+			                    <ul>
+			                      <li> `R_t = \sum_{t'=t}^{t' = T-1} \gamma^{t'-t} r_t' ` </li>
+			                      <li> ` \hat A_t(s_t,a_t) = R_t - b(s_t)` </li>
+			                      <li> ` \theta \leftarrow \theta + \alpha A_t(s_t,a_t) \nabla_\theta log \pi_\theta(s_t,a_t) ` </li>
+			                    </ul>
+			                    <li>Return `\theta`</li>
+			                  </ul>
+			                </li>
+			              </ul>
+			              <h4>Code for Monte Carlo Policy Gradient to solve gym Cart-pole environment:</h4>
+			              <script src="https://gitlab.com/snippets/1850603.js"></script>
+
+						<h2>Actor-Critic Algorithm:</h2>
+			            <p>
+			              Until now we have studied Critic-only methods and Actor-only methods. Critic-only methods that use temporal difference learning have a lower variance in the estimates of expected returns. A straightforward way of deriving a policy in critic-only methods is by selecting greedy actions actions for which the value function indicates that the expected return is the highest. Actor-only methods (example Policy Gradient) typically work with a parameterized family of policies over which optimization procedures can be used directly. In actor-critic spectrum of continuous actions can be generated, but the optimization methods used (typically called policy gradient methods) suffer from high variance in the estimates of the gradient, leading to slow learning.
+			              <br><br>
+			              Actor-critic methods combine the advantages of actor-only and critic-only methods. While the parameterized actor brings the advantage of computing continuous actions without the need for optimization procedures on a value function, the critic’s merit is that it supplies the actor with low-variance knowledge of the performance. More specifically, the critic’s estimate of the expected return allows for the actor to update with gradients that have lower variance, speeding up the learning process. Actor-critic methods usually have good convergence properties, in contrast to critic-only methods.
+			              <br><br>
+			              In Actor-only policy gradient method we were reducing variance and increasing stability by subtracting the cumulative reward by a baseline. Intuitively, making the cumulative reward smaller by subtracting it with a baseline will make smaller gradients, and thus smaller and more stable updates. 
+			              $$ \theta_{t+1} = \theta_t + \alpha \hat Q_t(s|a) \nabla_\theta log \pi_\theta(s|a) $$
+			              As we know, the Q value can be learned by parameterizing the Q function with a neural network.
+			              <br><br>
+			              This leads us to Actor Critic Methods, where:
+			              <br>
+			              1. The “Critic” estimates the value function. This could be the action-value (the Q value) or state-value (the V value).
+			              <br>
+			              2. The “Actor” updates the policy distribution in the direction suggested by the Critic (such as with policy gradients).
+			              <br><br>
+			              and both the Critic and Actor functions are parameterized with neural networks. In the derivation above, the Critic neural network parameterizes the Q value — so, it is called Q Actor Critic.
+			              <br><br>
+			              <h3> Problem with Policy Gradient</h3>
+			              We are in a situation of Monte Carlo, waiting until the end of episode to calculate the reward. We may conclude that if we have a high reward (R(t)), all actions that we took were good, even if some were really bad.
+			              <img src="images/policy-gradient-problem.png" class="img-responsive">
+			              As we can see in this example, even if A3 was a bad action (led to negative rewards), all the actions will be averaged as good because the total reward was important. As a consequence, to have an optimal policy, we need a lot of samples. This produces slow learning, because it takes a lot of time to converge. What if, instead, we can do an update at each time step? The Actor Critic model is a better score function. Instead of waiting until the end of the episode as we do in Monte Carlo REINFORCE, we make an update at each step (TD Learning).
+			              <br><br>
+			              	<h3>Advantage Actor-Critic (A2C)</h3>
+			            	Let's go back to baseline function which is subtracted from value to reduce variance of gradient estimation, using the V function as the baseline function, we subtract the Q value term with the V value. Intuitively, this means how much better it is to take a specific action compared to the average, general action at the given state. We will call this value the advantage value:
+			            	$$ A(s_t,a_t) = Q(s_t,a_t) - V(s_t) $$
+			            	we can rewrite this using bellman optimality equation as,
+			            	$$ A(s,t) = r_{t+1} + \gamma V(s_{t+1}) - V(s_t) $$
+			            	So, this is Advantage Actor-Critic Equation:
+			            	$$ \theta_{t+1} = \theta_t + \alpha \hat A_t(s|a) \nabla_\theta log \pi_\theta(s|a) $$
+			            	<h3>Asynchronous Advantage Actor-Critic (A3C)</h3>
+			            	A3C implements parallel training where multiple workers in parallel environments independently update a global value function—hence “asynchronous.” One key benefit of having asynchronous actors is effective and efficient exploration of the state space.
+			            	<img src="images/A3C.jpeg" class="img-responsive">
+			            </p>
+						<h2>More Resources</h2>
+			            <ol>
+			                <li><a href="https://towardsdatascience.com/an-intuitive-explanation-of-policy-gradient-part-1-reinforce-aa4392cbfd3c" target="_blank">An Intuitive Explanation of Policy Gradient.</a></li>
+			                <li><a href="https://youtu.be/KHZVXao4qXs" target="_blank">RL Course of David Silver - Lecture</a></li>
+			                <li><a href="http://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf" target="_blank">Reinforcement Learning: An Introduction by Richard S. Sutton and Andrew G. Barto</a></li>
+			                <li><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes" target="_blank">Example codes and problems to understand concepts better.</a></li>
+			            </ol>
+    				</div>
+    			</div>
+			      <script>
+			        var disqus_config = function () {
+			        this.page.url = "https://adityajn105.github.io/blogs/actor-critic.html";  // Replace PAGE_URL with your page's canonical URL variable
+			        this.page.identifier = 6; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+			        };
+			        (function() { // DON'T EDIT BELOW THIS LINE
+			        var d = document, s = d.createElement('script');
+			        s.src = 'https://adityajn105.disqus.com/embed.js';
+			        s.setAttribute('data-timestamp', +new Date());
+			        (d.head || d.body).appendChild(s);
+			        })();
+			      </script>
+		    	  <div class="col-md-8" id="disqus_thread"></div>
+		   </div>
+		</div>
+    </div>
+
+    <div id="contact">
+        <h2>Get in Touch</h2>
+        <div id="contact-form">
+            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
+                <input type="hidden" name="_subject" value="Contact request from personal website" />
+                <input type="email" name="_replyto" placeholder="Your email" required>
+                <textarea name="message" placeholder="Your message" required></textarea>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+        <!-- End #contact-form -->
+    </div>
+    <!-- End #contact -->
+
+     <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-5 copyright">
+                    <p>
+                        Copyright &copy; 2018 Aditya Jain
+                    </p>
+                </div>
+                <div class="col-sm-2 top">
+                    <span id="to-top">
+                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <div class="col-sm-5 social">
+                    <ul>
+                        <li>
+                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
+                        </li>
+                        <li>
+                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- End footer -->
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="/js/scripts.min.js"></script>
+    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+</body>
+</html>
