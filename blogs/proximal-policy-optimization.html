@@ -1,82 +1,104 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Proximal Policy Optimization | Blogs | Aditya Jain</title>
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+     <title>Proximal Policy Optimization | Blogs | Aditya Jain</title>
 
     <meta name="description" content="Proximal Policy Optimization - State of the art RL algorithm"/>
-	<meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, monte carlo methods, temporal difference" />
-	<meta name="author" content="Aditya Jain" />
-	<!-- Facebook and Twitter integration -->
-	<meta property="og:title" content="Proximal Policy Optimization - State of the art RL algorithm | Blog by Aditya Jain"/>
-	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
-	<meta property="og:url" content="https://adityajn105.github.io/blogs/proximal-policy-optimization.html"/>
-	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
-	<meta property="og:description" content="Proximal Policy Optimization - State of the art RL algorithm"/>
-	<meta name="twitter:title" content="Proximal Policy Optimization - State of the art RL algorithm | Blog by Aditya Jain" />
-	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
-	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/proximal-policy-optimization.html" />
+    <meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, monte carlo methods, temporal difference" />
+    <meta name="author" content="Aditya Jain" />
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="Proximal Policy Optimization - State of the art RL algorithm | Blog by Aditya Jain"/>
+    <meta property="og:image" content="../favicon.ico"/>
+    <meta property="og:url" content="blogs/proximal-policy-optimization.html"/>
+    <meta property="og:site_name" content="Aditya Jain | Portfolio"/>
+    <meta property="og:description" content="Proximal Policy Optimization - State of the art RL algorithm"/>
+    <meta name="twitter:title" content="Proximal Policy Optimization - State of the art RL algorithm | Blog by Aditya Jain" />
+    <meta name="twitter:image" content="../favicon.ico" />
+    <meta name="twitter:url" content="blogs/proximal-policy-optimization.html" />
 
-	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-	<link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="../libs/font-awesome/css/font-awesome.min.css">
 
+    <!-- favicon -->
+    <link href="../favicon.ico" rel=icon>
+    <!-- web-fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Hind:300,400,500,600,700" rel="stylesheet">
+    <!-- font-awesome -->
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/styles.css" rel="stylesheet">
+    <!-- Style CSS -->
+    <link href="style.css" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
-
-	  gtag('config', 'UA-123324949-1');
-	</script>
-	
-
-	 <!-- For MathJax -->
+      gtag('config', 'UA-123324949-1');
+    </script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
     <script type="text/x-mathjax-config">
-  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
-	</script>
-	<noscript>
-		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
-	</noscript>
-</head>
-<body>
-    <div id="mobile-menu-open" class="shadow-large">
-        <i class="fa fa-bars" aria-hidden="true"></i>
-    </div>
-    <!-- End #mobile-menu-toggle -->
-    <header>
-        <div id="mobile-menu-close">
-            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
-        </div>
-        <ul id="menu" class="shadow">
-            <li>
-                <a href="https://adityajn105.github.io/">Back</a>
-            </li>
-            <li>
-                <a href="#contact">Contact</a>
-            </li>
-        </ul>
-    </header>
+        MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
 
-    <div id="blog">
-    	<div class="container">
-            <div class="row">
-	    		<h1>Proximal Policy Optimization</h1>
-		    	<div id="blog-body">
-		    		<div class="col-md-8">
-		    			<h5>26 April 2019 | Aditya Jain</h5>
-	    		<p>
-				We have seen Policy Gradient and Actor-Critic methods in the last blog, the idea behind that was taking gradient ascent. We will push our agent to take actions that lead to higher rewards and avoid bad actions. Before discuss problems associated with these methods lets quickly revise these methods from the below link.		
+</head>
+<body id="page-top" data-spy="scroll" data-target=".navbar">
+<div id="main-wrapper">
+<!-- Page Preloader -->
+<div id="preloader">
+    <div id="status">
+        <div class="status-mes"></div>
+    </div>
+</div>
+
+<div class="columns-block container">
+<div class="left-col-block blocks">
+    <header class="header theiaStickySidebar">
+        <h1></h1>
+        <div class="content">
+            <span class="lead">26 April 2019 | Aditya Jain</span>
+            <h2>Proximal Policy Optimization</h2>
+
+            <h3>Contents</h3>
+            <ul>
+                 <li><b>Proximal Policy Optimization</b></li>
+                 <li>Clipped Surrogate Objective Function</li>
+                 <li>Generalized Advantage Estimation</li>
+                 <li>Multiple epochs of Policy Updates</li>
+            </ul>
+
+            <ul class="social-icon">
+                <li><a href="https://github.com/adityajn105"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://linkedin.com/in/adityajn105"><i class="fa fa-linkedin fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.instagram.com/adityajn105/"><i class="fa fa-instagram fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://twitter.com/adityajn105"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.facebook.com/adityajn105"><i class="fa fa-facebook fa-2x" aria-hidden="true"></i></a></li>
+            </ul>
+
+            <a href="/" class="btn btn-primary">Go Back</a>
+        </div>
+
+    </header>
+    <!-- .header-->
+</div>
+<!-- .left-col-block -->
+
+
+<div class="right-col-block blocks">
+<div class="theiaStickySidebar">
+<section class="section-wrapper section-interest gray-bg">
+    <div class="container-fluid">
+        <div class="col-md-12">
+                <p>
+                We have seen Policy Gradient and Actor-Critic methods in the last blog, the idea behind that was taking gradient ascent. We will push our agent to take actions that lead to higher rewards and avoid bad actions. Before discuss problems associated with these methods lets quickly revise these methods from the below link.     
                 <br><br>
-                <a href='https://adityajn105.github.com/blogs/actor-critic.html'>Policy Gradient and Actor-Critic Algorithm</a>
+                <a href='blogs/actor-critic.html'>Policy Gradient and Actor-Critic Algorithm</a>
                 <br>
                 <img src="images/policy-loss.png" style="height: 75%;width: 75%" class="img-responsive"/>
                 <br>
@@ -95,64 +117,64 @@
                 2. Sample efficiency<br>
                 3. Minimal hyperparameter tuning.
                 <br><br>
-            	</p>
-			    <h2>Proximal Policy Optimization : </h2>
-			    <p>
-			    The route to success in reinforcement learning isn’t as obvious — the algorithms have many moving parts that are hard to debug, and they require substantial effort in tuning in order to get good results. PPO strikes a balance between ease of implementation, sample complexity, and ease of tuning, trying to compute an update at each step that minimizes the cost function while ensuring the deviation from the previous policy is relatively small.
-			    <br><br>
-			  	We will look into the following upgrades on Actor-Critic Alogrithm which lead us to PPO:
-			  	<br>
-			  	1. Clipped Surrogate Objective Function<br>
-			  	2. Generalized Advantage Estimation<br>
-			  	<br>
-            	<h3>Clipped Surrogate Objective Function</h3>
-            	The Clipped Surrogate Objective is a drop-in replacement for the policy gradient objective that is designed to improve training stability by limiting the change you make to your policy at each step.
-            	<br><br>
-            	For vanilla policy gradients (e.g., REINFORCE) --- which you should be familiar with, or familiarize yourself with before you read this --- the objective used to optimize the neural network looks like:
-            	$$  L^{PG}(\theta) = \hat E_t \biggl [ log \pi_\theta(s|a) \hat A_t \biggl ] $$
-            	This is the standard formula where the advantage (A hat) is often replaced with the discounted return. By taking a gradient ascent step on this loss with respect to the network parameters, you will incentivize the actions that led to higher reward. The vanilla policy gradient method uses the log probability of your action (log π(a | s)) to trace the impact of the actions, but you could imagine using another function to do this.
-            	<br><br>
-            	Another such function, uses the probability of the action under the current policy (π(a|s)), divided by the probability of the action under your previous policy (π_old(a|s)). This looks a bit similar to importance sampling if you are familiar with that:
-            	$$ r_t(\theta) = \frac{ \pi_{\theta}(a_t|s_t) }{ \pi_{\theta_{old}}(a_t|s_t) } $$
-            	This r(θ) will be greater than 1 when the action is more probable for your current policy than it is for your old policy; it will be between 0 and 1 when the action is less probable for your current policy than for your old. Now to build an objective function with this r(θ), we can simply swap it in for the log π(a|s) term.
-            	$$ L^{PG}(\theta) =  \hat E_t \biggl[ \frac{ \pi_{\theta}(a_t|s_t) }{ \pi_{\theta_{old}}(a_t|s_t) }  \hat A_t \biggl] = \hat E_t \biggl [ r_t(\theta) \hat A_t \biggl ] $$ 
-            	But what would happen here if your action is much more probable (like 100x more) for your current policy? r(θ) will tend to be really big and lead to taking big gradient steps that might wreck your policy.
-            	<br><br>
-            	To deal with this and other issues, we can limit the amount the policy can change and help guarantee that it is monotonically improving. As you may guess, this is what PPO does. It gains the same performance benefits and avoids the complications by optimizing this simple (but kind of funny looking) Clipped Surrogate Objective:
-            	<br>
-            	<img src="images/clipped_surrogate_func.png" class="img-responsive"/>
-            	<br>
-            	The first term (blue) inside the minimization is the same (r(θ)A), The second term (red) is a version where the (r(θ)) is clipped between (1 - `\epsilon`, 1 + `\epsilon`). (in the PPO paper they state a good value for `\epsilon` is about 0.2, so r can vary between ~(0.8, 1.2)). Then, finally, the minimization of both of these terms is taken (green).
-            	<br><br>
-            	So we see that these clipping regions prevent us from getting too greedy and trying to update too much at once and leaving the region where this sample offers a good estimate.
-            	<br>
-         		Here is a diagram summarizing this:
-            	<br><br>
-            	<img src="images/clipped_surrogate_func.png_2.png" class="img-responsive">
-            	<br>
-            	The Clipped Surrogate Objective is just a drop-in replacement you could use in the vanilla policy gradient. The clipping limits the effective change you can make at each step in order to improve stability, and the minimization allows us to fix our mistakes in case we screwed it up. 
-            	<br><br>
-            	<h3>Generalized Advantage Estimation</h3>
-            	This is a way to calculate returns which reduces variances. The smoothing factor is governed by `\lambda` which lies between 0 and 1. `\lambda = 1` have higher accuracy but lower smoothness. PPO paper suggest `\lambda = 0.95`.
-            	<h4>Algorithm</h4>
-            	<ul>
-            		<li>mask is 0 if the state is terminal, otherwise 1</li>
-            		<li>init `gae=0`; loop backward from last step</li>
-            		<li>`\partial = r + \gamma V(s') * mask - V(s)` </li>
-            		<li>`gae = \partial + \gamma \lambda * mask * gae `</li>
-            		<li>`return(s,a) = gae + V(s)`</li>
-            		<li>reverse the list of returns back in correct order</li>
-            	</ul>
-            	<h3>Multiple epochs of Policy Updates</h3>
-            	Unlike vanilla policy gradient methods, and because of the Clipped Surrogate Objective function, PPO allows you to run multiple epochs of gradient ascent on your samples without causing destructively large policy updates. This allows you to squeeze more out of your data and reduce sample inefficiency.
-            	<br><br>
-            	PPO runs the policy using N parallel actors each collecting data, and then it samples mini-batches of this data to train for K epochs using the Clipped Surrogate Objective function.
-            	<br><br>
-            	<img src="images/ppo_multi_epochs.png" class="img-responsive">
-            	<h2><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes/Pendulum%20-%20PPO">See Full Code for PPO</a></h2>
-            	</p>
+                </p>
+                <h2>Proximal Policy Optimization : </h2>
+                <p>
+                The route to success in reinforcement learning isn’t as obvious — the algorithms have many moving parts that are hard to debug, and they require substantial effort in tuning in order to get good results. PPO strikes a balance between ease of implementation, sample complexity, and ease of tuning, trying to compute an update at each step that minimizes the cost function while ensuring the deviation from the previous policy is relatively small.
+                <br><br>
+                We will look into the following upgrades on Actor-Critic Alogrithm which lead us to PPO:
+                <br>
+                1. Clipped Surrogate Objective Function<br>
+                2. Generalized Advantage Estimation<br>
+                <br>
+                <h3>Clipped Surrogate Objective Function</h3>
+                The Clipped Surrogate Objective is a drop-in replacement for the policy gradient objective that is designed to improve training stability by limiting the change you make to your policy at each step.
+                <br><br>
+                For vanilla policy gradients (e.g., REINFORCE) --- which you should be familiar with, or familiarize yourself with before you read this --- the objective used to optimize the neural network looks like:
+                $$  L^{PG}(\theta) = \hat E_t \biggl [ log \pi_\theta(s|a) \hat A_t \biggl ] $$
+                This is the standard formula where the advantage (A hat) is often replaced with the discounted return. By taking a gradient ascent step on this loss with respect to the network parameters, you will incentivize the actions that led to higher reward. The vanilla policy gradient method uses the log probability of your action (log π(a | s)) to trace the impact of the actions, but you could imagine using another function to do this.
+                <br><br>
+                Another such function, uses the probability of the action under the current policy (π(a|s)), divided by the probability of the action under your previous policy (π_old(a|s)). This looks a bit similar to importance sampling if you are familiar with that:
+                $$ r_t(\theta) = \frac{ \pi_{\theta}(a_t|s_t) }{ \pi_{\theta_{old}}(a_t|s_t) } $$
+                This r(θ) will be greater than 1 when the action is more probable for your current policy than it is for your old policy; it will be between 0 and 1 when the action is less probable for your current policy than for your old. Now to build an objective function with this r(θ), we can simply swap it in for the log π(a|s) term.
+                $$ L^{PG}(\theta) =  \hat E_t \biggl[ \frac{ \pi_{\theta}(a_t|s_t) }{ \pi_{\theta_{old}}(a_t|s_t) }  \hat A_t \biggl] = \hat E_t \biggl [ r_t(\theta) \hat A_t \biggl ] $$ 
+                But what would happen here if your action is much more probable (like 100x more) for your current policy? r(θ) will tend to be really big and lead to taking big gradient steps that might wreck your policy.
+                <br><br>
+                To deal with this and other issues, we can limit the amount the policy can change and help guarantee that it is monotonically improving. As you may guess, this is what PPO does. It gains the same performance benefits and avoids the complications by optimizing this simple (but kind of funny looking) Clipped Surrogate Objective:
+                <br>
+                <img src="images/clipped_surrogate_func.png" class="img-responsive"/>
+                <br>
+                The first term (blue) inside the minimization is the same (r(θ)A), The second term (red) is a version where the (r(θ)) is clipped between (1 - `\epsilon`, 1 + `\epsilon`). (in the PPO paper they state a good value for `\epsilon` is about 0.2, so r can vary between ~(0.8, 1.2)). Then, finally, the minimization of both of these terms is taken (green).
+                <br><br>
+                So we see that these clipping regions prevent us from getting too greedy and trying to update too much at once and leaving the region where this sample offers a good estimate.
+                <br>
+                Here is a diagram summarizing this:
+                <br><br>
+                <img src="images/clipped_surrogate_func.png_2.png" class="img-responsive">
+                <br>
+                The Clipped Surrogate Objective is just a drop-in replacement you could use in the vanilla policy gradient. The clipping limits the effective change you can make at each step in order to improve stability, and the minimization allows us to fix our mistakes in case we screwed it up. 
+                <br><br>
+                <h3>Generalized Advantage Estimation</h3>
+                This is a way to calculate returns which reduces variances. The smoothing factor is governed by `\lambda` which lies between 0 and 1. `\lambda = 1` have higher accuracy but lower smoothness. PPO paper suggest `\lambda = 0.95`.
+                <h4>Algorithm</h4>
+                <ul>
+                    <li>mask is 0 if the state is terminal, otherwise 1</li>
+                    <li>init `gae=0`; loop backward from last step</li>
+                    <li>`\partial = r + \gamma V(s') * mask - V(s)` </li>
+                    <li>`gae = \partial + \gamma \lambda * mask * gae `</li>
+                    <li>`return(s,a) = gae + V(s)`</li>
+                    <li>reverse the list of returns back in correct order</li>
+                </ul>
+                <h3>Multiple epochs of Policy Updates</h3>
+                Unlike vanilla policy gradient methods, and because of the Clipped Surrogate Objective function, PPO allows you to run multiple epochs of gradient ascent on your samples without causing destructively large policy updates. This allows you to squeeze more out of your data and reduce sample inefficiency.
+                <br><br>
+                PPO runs the policy using N parallel actors each collecting data, and then it samples mini-batches of this data to train for K epochs using the Clipped Surrogate Objective function.
+                <br><br>
+                <img src="images/ppo_multi_epochs.png" class="img-responsive">
+                <h2><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes/Pendulum%20-%20PPO">See Full Code for PPO</a></h2>
+                </p>
 
-			<h2>More Resources</h2>
+            <h2>More Resources</h2>
             <ol>
                 <li><a href="https://medium.com/@jonathan_hui/rl-proximal-policy-optimization-ppo-explained-77f014ec3f12" target="_blank">Jonathan Hui's blog (PPO explained)</a></li>
                 <li><a href="https://www.youtube.com/watch?v=5P7I-xPq8u8">Dive deeper into Proximal Policy Optimization with Arxiv Insights</a></li>
@@ -160,11 +182,10 @@
                 <li><a href="https://stackoverflow.com/questions/46422845/what-is-the-way-to-understand-proximal-policy-optimization-algorithm-in-rl%20target=" target="_blank">Stackoverflow matwilso's answer</a></li>
                 <li><a href="https://blog.openai.com/openai-baselines-ppo" target="_blank">OpenAI blog</a></li>
             </ol>
-    		</div>
-    	</div>
-          <script>
+        </div>
+        <script>
             var disqus_config = function () {
-            this.page.url = "https://adityajn105.github.io/blogs/proximal-policy-optimization.html";  // Replace PAGE_URL with your page's canonical URL variable
+            this.page.url = "";  // Replace PAGE_URL with your page's canonical URL variable
             this.page.identifier = 7; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
             };
             (function() { // DON'T EDIT BELOW THIS LINE
@@ -173,68 +194,80 @@
             s.setAttribute('data-timestamp', +new Date());
             (d.head || d.body).appendChild(s);
             })();
-          </script>
-		    	<div class="col-md-8" id="disqus_thread"></div>
-		    </div>
-		</div>
+        </script>
+        <div id="disqus_thread"></div>      
     </div>
-
-    <div id="contact">
-        <h2>Get in Touch</h2>
-        <div id="contact-form">
-            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
-                <input type="hidden" name="_subject" value="Contact request from personal website" />
-                <input type="email" name="_replyto" placeholder="Your email" required>
-                <textarea name="message" placeholder="Your message" required></textarea>
-                <button type="submit">Send</button>
-            </form>
-        </div>
-        <!-- End #contact-form -->
-    </div>
-    <!-- End #contact -->
-
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-5 copyright">
-                    <p>
-                        Copyright &copy; 2018 Aditya Jain
-                    </p>
-                </div>
-                <div class="col-sm-2 top">
-                    <span id="to-top">
-                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
-                    </span>
-                </div>
-                <div class="col-sm-5 social">
-                    <ul>
-                        <li>
-                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                        </li>
-                    </ul>
+</section>
+<section class="section-contact section-wrapper gray-bg">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="section-title">
+                    <h2>Contact</h2>
                 </div>
             </div>
         </div>
-    </footer>
-    <!-- End footer -->
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="/js/scripts.min.js"></script>
-    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="feedback-form">
+                    <h2>Get in touch</h2>
+
+                    <form id="contactForm" action="https://formspree.io/adityajn105@gmail.com" method="POST" target='_blank'>
+                        <div class="form-group">
+                            <input type="hidden" name="_subject" value="Contact request from personal website" 
+                            class="form-control" id="InputSubject">
+                        </div>
+                        <div class="form-group">
+                            <label for="InputEmail">Email address</label>
+                            <input type="email" name="_replyto" required="" class="form-control" id="InputEmail"
+                                   placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">Message</label>
+                            <textarea class="form-control" rows="4" required="" name="message" id="message-text"
+                                      placeholder="Write message"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--.container-fluid-->
+</section>
+
+<footer class="footer">
+    <div class="copyright-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="copytext">&copy; Resumex. All rights reserved | Design By: <a
+                            href="https://themehippo.com">themehippo</a></div>
+                </div>
+            </div>
+            <!--.row-->
+        </div>
+        <!-- .container-fluid -->
+    </div>
+    <!-- .copyright-section -->
+</footer>
+<!-- .footer -->
+</div>
+<!-- Sticky -->
+</div>
+<!-- .right-col-block -->
+</div>
+<!-- .columns-block -->
+</div>
+<!-- #main-wrapper -->
+
+<!-- jquery -->
+<script src="../js/jquery-2.1.4.min.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<script src="../js/theia-sticky-sidebar.js"></script>
+<script src="../js/scripts.js"></script>
 </body>
 </html>

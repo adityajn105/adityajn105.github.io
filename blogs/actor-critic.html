@@ -1,82 +1,104 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Policy Gradient and Actor-Critic Algorithm | Blogs | Aditya Jain</title>
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+     <title>Policy Gradient and Actor-Critic Algorithm | Blogs | Aditya Jain</title>
 
     <meta name="description" content="Policy Gradient and Actor-Critic Algorithm"/>
 	<meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, actor-critic, policy-gradient" />
 	<meta name="author" content="Aditya Jain" />
 	<!-- Facebook and Twitter integration -->
 	<meta property="og:title" content="Policy Gradient and Actor-Critic Algorithm | Blog by Aditya Jain"/>
-	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
-	<meta property="og:url" content="https://adityajn105.github.io/blogs/actor-critic.html"/>
+	<meta property="og:image" content="../favicon.ico"/>
+	<meta property="og:url" content="blogs/actor-critic.html"/>
 	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
 	<meta property="og:description" content="Policy Gradient and Actor-Critic Algorithm"/>
 	<meta name="twitter:title" content="Policy Gradient and Actor-Critic Algorithm | Blog by Aditya Jain" />
-	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
-	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/actor-critic.html" />
+	<meta name="twitter:image" content="../favicon.ico" />
+	<meta name="twitter:url" content="blogs/actor-critic.html" />
 
-	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-	<link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="../libs/font-awesome/css/font-awesome.min.css">
 
+    <!-- favicon -->
+    <link href="../favicon.ico" rel=icon>
+    <!-- web-fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Hind:300,400,500,600,700" rel="stylesheet">
+    <!-- font-awesome -->
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/styles.css" rel="stylesheet">
+    <!-- Style CSS -->
+    <link href="style.css" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
-
-	  gtag('config', 'UA-123324949-1');
-	</script>
-	
-
-	 <!-- For MathJax -->
+      gtag('config', 'UA-123324949-1');
+    </script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
     <script type="text/x-mathjax-config">
-  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
-	</script>
-	<noscript>
-		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
-	</noscript>
-</head>
-<body>
-    <div id="mobile-menu-open" class="shadow-large">
-        <i class="fa fa-bars" aria-hidden="true"></i>
-    </div>
-    <!-- End #mobile-menu-toggle -->
-    <header>
-        <div id="mobile-menu-close">
-            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
-        </div>
-        <ul id="menu" class="shadow">
-            <li>
-                <a href="https://adityajn105.github.io/">Back</a>
-            </li>
-            <li>
-                <a href="#contact">Contact</a>
-            </li>
-        </ul>
-    </header>
+        MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
 
-    <div id="blog">
-    	<div class="container">
-            <div class="row">
-	    		<h1>Policy Gradient and Actor-Critic Algorithm</h1>
-		    	<div id="blog-body">
-		    		<div class="col-md-8">
-	    				<h5>24 April 2019 | Aditya Jain</h5>
-		    			<p>
+</head>
+<body id="page-top" data-spy="scroll" data-target=".navbar">
+<div id="main-wrapper">
+<!-- Page Preloader -->
+<div id="preloader">
+    <div id="status">
+        <div class="status-mes"></div>
+    </div>
+</div>
+
+<div class="columns-block container">
+<div class="left-col-block blocks">
+    <header class="header theiaStickySidebar">
+        <h1></h1>
+        <div class="content">
+            <span class="lead">24 April 2019 | Aditya Jain</span>
+            <h2>Policy Gradient and Actor-Critic Algorithm</h2>
+
+            <h3>Contents</h3>
+            <ul>
+                 <li><b>Policy Gradient (REINFORCE)</b></li>
+                 <li><b>Actor-Critic Algorithm:</b></li>
+                 <li>Advantage Actor-Critic (A2C)</li>
+                 <li>Asynchronous Advantage Actor-Critic (A3C)</li>
+            </ul>
+
+            <ul class="social-icon">
+                <li><a href="https://github.com/adityajn105"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://linkedin.com/in/adityajn105"><i class="fa fa-linkedin fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.instagram.com/adityajn105/"><i class="fa fa-instagram fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://twitter.com/adityajn105"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.facebook.com/adityajn105"><i class="fa fa-facebook fa-2x" aria-hidden="true"></i></a></li>
+            </ul>
+
+            <a href="/" class="btn btn-primary">Go Back</a>
+        </div>
+
+    </header>
+    <!-- .header-->
+</div>
+<!-- .left-col-block -->
+
+
+<div class="right-col-block blocks">
+<div class="theiaStickySidebar">
+<section class="section-wrapper section-interest gray-bg">
+    <div class="container-fluid">
+        <div class="col-md-12">
+                <p>
 			    		Today most successful reinforcement algorithm A3C, PPO etc belong to the policy gradient family of algorithm often more specifically to the actor-critic family. But before going into mathematics of these algorithm, you must have basic knowledge of Deep Q Learning(below link).
 			                <br><br>
-			                <a href='https://adityajn105.github.com/blogs/deep-q-learning.html'>Deep Q Learning</a>
+			                <a href='blogs/deep-q-learning.html'>Deep Q Learning</a>
 			                <br><br>
 			                Before going any further, let's understand some drawbacks of Q Learning.
 			                <br><br>
@@ -174,81 +196,92 @@
 			                <li><a href="http://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf" target="_blank">Reinforcement Learning: An Introduction by Richard S. Sutton and Andrew G. Barto</a></li>
 			                <li><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes" target="_blank">Example codes and problems to understand concepts better.</a></li>
 			            </ol>
-    				</div>
-    			</div>
-			      <script>
-			        var disqus_config = function () {
-			        this.page.url = "https://adityajn105.github.io/blogs/actor-critic.html";  // Replace PAGE_URL with your page's canonical URL variable
-			        this.page.identifier = 6; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-			        };
-			        (function() { // DON'T EDIT BELOW THIS LINE
-			        var d = document, s = d.createElement('script');
-			        s.src = 'https://adityajn105.disqus.com/embed.js';
-			        s.setAttribute('data-timestamp', +new Date());
-			        (d.head || d.body).appendChild(s);
-			        })();
-			      </script>
-		    	  <div class="col-md-8" id="disqus_thread"></div>
-		   </div>
-		</div>
-    </div>
-
-    <div id="contact">
-        <h2>Get in Touch</h2>
-        <div id="contact-form">
-            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
-                <input type="hidden" name="_subject" value="Contact request from personal website" />
-                <input type="email" name="_replyto" placeholder="Your email" required>
-                <textarea name="message" placeholder="Your message" required></textarea>
-                <button type="submit">Send</button>
-            </form>
         </div>
-        <!-- End #contact-form -->
+        <script>
+            var disqus_config = function () {
+            this.page.url = "";  // Replace PAGE_URL with your page's canonical URL variable
+            this.page.identifier = 6; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+            };
+            (function() { // DON'T EDIT BELOW THIS LINE
+            var d = document, s = d.createElement('script');
+            s.src = 'https://adityajn105.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <div id="disqus_thread"></div>      
     </div>
-    <!-- End #contact -->
-
-     <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-5 copyright">
-                    <p>
-                        Copyright &copy; 2018 Aditya Jain
-                    </p>
-                </div>
-                <div class="col-sm-2 top">
-                    <span id="to-top">
-                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
-                    </span>
-                </div>
-                <div class="col-sm-5 social">
-                    <ul>
-                        <li>
-                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                        </li>
-                    </ul>
+</section>
+<section class="section-contact section-wrapper gray-bg">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="section-title">
+                    <h2>Contact</h2>
                 </div>
             </div>
         </div>
-    </footer>
-    <!-- End footer -->
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="/js/scripts.min.js"></script>
-    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="feedback-form">
+                    <h2>Get in touch</h2>
+
+                    <form id="contactForm" action="https://formspree.io/adityajn105@gmail.com" method="POST" target='_blank'>
+                        <div class="form-group">
+                            <input type="hidden" name="_subject" value="Contact request from personal website" 
+                            class="form-control" id="InputSubject">
+                        </div>
+                        <div class="form-group">
+                            <label for="InputEmail">Email address</label>
+                            <input type="email" name="_replyto" required="" class="form-control" id="InputEmail"
+                                   placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">Message</label>
+                            <textarea class="form-control" rows="4" required="" name="message" id="message-text"
+                                      placeholder="Write message"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--.container-fluid-->
+</section>
+
+<footer class="footer">
+    <div class="copyright-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="copytext">&copy; Resumex. All rights reserved | Design By: <a
+                            href="https://themehippo.com">themehippo</a></div>
+                </div>
+            </div>
+            <!--.row-->
+        </div>
+        <!-- .container-fluid -->
+    </div>
+    <!-- .copyright-section -->
+</footer>
+<!-- .footer -->
+</div>
+<!-- Sticky -->
+</div>
+<!-- .right-col-block -->
+</div>
+<!-- .columns-block -->
+</div>
+<!-- #main-wrapper -->
+
+<!-- jquery -->
+<script src="../js/jquery-2.1.4.min.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<script src="../js/theia-sticky-sidebar.js"></script>
+<script src="../js/scripts.js"></script>
 </body>
 </html>

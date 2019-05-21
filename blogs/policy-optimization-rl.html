@@ -1,370 +1,405 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Policy Optimization in Reinforcement Learning | Blogs | Aditya Jain</title>
 
     <meta name="description" content="Value and Policy Iterations are policy optimization methods for Reinforcement Learning."/>
-	<meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, value iterations, policy iterations" />
-	<meta name="author" content="Aditya Jain" />
-	<!-- Facebook and Twitter integration -->
-	<meta property="og:title" content="Value and Policy Iterations are policy optimization methods for Reinforcement Learning | Blog by Aditya Jain"/>
-	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
-	<meta property="og:url" content="https://adityajn105.github.io/blogs/policy-optimization-rl.html"/>
-	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
-	<meta property="og:description" content="Value and Policy Iterations are policy optimization methods for Reinforcement Learning."/>
-	<meta name="twitter:title" content="Policy Optimization in Reinforcement Learning | Blog by Aditya Jain" />
-	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
-	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/policy-optimization-rl.html" />
+    <meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, value iterations, policy iterations" />
+    <meta name="author" content="Aditya Jain" />
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="Value and Policy Iterations are policy optimization methods for Reinforcement Learning | Blog by Aditya Jain"/>
+    <meta property="og:image" content="../favicon.ico"/>
+    <meta property="og:url" content="blogs/policy-optimization-rl.html"/>
+    <meta property="og:site_name" content="Aditya Jain | Portfolio"/>
+    <meta property="og:description" content="Value and Policy Iterations are policy optimization methods for Reinforcement Learning."/>
+    <meta name="twitter:title" content="Policy Optimization in Reinforcement Learning | Blog by Aditya Jain" />
+    <meta name="twitter:image" content="../favicon.ico" />
+    <meta name="twitter:url" content="blogs/policy-optimization-rl.html" />
 
-	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-	<link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="../libs/font-awesome/css/font-awesome.min.css">
-    
+    <!-- favicon -->
+    <link href="../favicon.ico" rel=icon>
+    <!-- web-fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Hind:300,400,500,600,700" rel="stylesheet">
+    <!-- font-awesome -->
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/styles.css" rel="stylesheet">
+    <!-- Style CSS -->
+    <link href="style.css" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
-
-	  gtag('config', 'UA-123324949-1');
-	</script>
-
-	 <!-- For MathJax -->
+      gtag('config', 'UA-123324949-1');
+    </script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
     <script type="text/x-mathjax-config">
-  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
-	</script>
-	<noscript>
-		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
-	</noscript>
+        MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
+
 </head>
-<body>
-    <div id="mobile-menu-open" class="shadow-large">
-        <i class="fa fa-bars" aria-hidden="true"></i>
+<body id="page-top" data-spy="scroll" data-target=".navbar">
+<div id="main-wrapper">
+<!-- Page Preloader -->
+<div id="preloader">
+    <div id="status">
+        <div class="status-mes"></div>
     </div>
-    <!-- End #mobile-menu-toggle -->
-    <header>
-        <div id="mobile-menu-close">
-            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
+</div>
+
+<div class="columns-block container">
+<div class="left-col-block blocks">
+    <header class="header theiaStickySidebar">
+        <h1></h1>
+        <div class="content">
+            <span class="lead">19 October 2018 | Aditya Jain</span>
+            <h2>Policy Optimization methods in Reinforcement Learning</h2>
+
+            <h3>Contents</h3>
+            <ul>
+                 <li><b>Markov Decision Process</b></li>
+                 <li><b>Bellman Equation</b></li>
+                 <li>Value Functions</li>
+                 <li><b>Policy Optimization</b></li>
+                 <li>1. Policy Iteration</li>
+                 <li>2. Value Iteration</li>
+            </ul>
+
+            <ul class="social-icon">
+                <li><a href="https://github.com/adityajn105"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://linkedin.com/in/adityajn105"><i class="fa fa-linkedin fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.instagram.com/adityajn105/"><i class="fa fa-instagram fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://twitter.com/adityajn105"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.facebook.com/adityajn105"><i class="fa fa-facebook fa-2x" aria-hidden="true"></i></a></li>
+            </ul>
+
+            <a href="/" class="btn btn-primary">Go Back</a>
         </div>
-        <ul id="menu" class="shadow">
-            <li>
-                <a href="https://adityajn105.github.io/">Back</a>
-            </li>
-            <li>
-                <a href="#contact">Contact</a>
-            </li>
-        </ul>
+
     </header>
+    <!-- .header-->
+</div>
+<!-- .left-col-block -->
 
-    <div id="blog">
-    	<div class="container">
-            <div class="row">
-	    		<h1>Policy Optimization methods in Reinforcement Learning</h1>
-		    	<div id="blog-body">
-		    		<div class="col-md-8">
-		    			<h5>19 October 2018 | Aditya Jain</h5>
-			    		<p>
-				    		Before we go ahead and start discussing about policy optimization methods in Reinforcement Learning. Let me first clear few terms such as markov decision process, bellman equation, states, actions, rewards, policy, value functions etc. So lets understand them one by one.
-				    		<br><br>
-				    		In Reinforcement Learning, An AI agent learn how to optimally interact in a Real Time environment using Time-Delayed Labels called as Rewards as a signal.
-				    		<br>
-				    		<b>Markov Decision Process</b> is a mathematical framework for defining the reinforcement learning problem using STATES, ACTIONS, REWARDS. 
-				    		<br>Through interacting with an environment, an AI will learn a policy which will return an action for a given STATE with the highest reward.
-				    		<br>
-				    		<h3>Markov Decision Process(MDP)</h3>
-				    		Reinforcement Learning problems are mathematically described using framework called Markov Decision Process(MDP). MDP are extended version of Markov Chain which adds decision and rewards to it. Markov indicates 'Markovian Property' means future state is independent of any previous state history given current state and action. Current state contains all that is needed to decide the future state when input action is given. This simplifies things a lot. Example "In a game of Chess".
-				    		<br><br>
-				    		MDP is an approach in achieving reinforcement learing to take decisions in a matrix. A grid would consist of states in form of grid. MDP tries to capture world in form of grid by dividing it into states, actions, transition matrix and rewards. The solution of MDP is policy and objective is to find optimal policy for task that MDP is imposed. Thus any reinforcement learning task is composed of set of states, actions and rewards that follow markov property is considered as MDP.
-				    		<br><br>
-				    		<b>State : </b> A set of tokens that represent every condition that agent can be in.<br>
-				    		<b>Model : </b> model or transition model gives an action's effect in state. In particular `T(s,a,s')` defines transition T where being in state S, taking action 'a' takes us to state 's'. For stochastic actions (noisy, non-deterministic) we define probabiliity `P(S'|S,a)` which represent probability of reaching S' if action 'a' is taken in state S.<br>
-				    		<b>Action : </b> Action 'a' is set of all possible decision, a(s) defines set of action that can be taken in state S.<br>
-				    		<b>Reward : </b> It is a real-valued response to action. ` R(s) ` indicate reward for being in state 's'. ` R(s,a) ` is reward for being in state 's' and taking action 'a'. ` R(s,a,s') ` indicates reward for being in state 's', taking action 'a' and ending up in state 's'.<br>
-				    		<b>Policy : </b> It is a solution to Markov Decision Process. It is set of actions that are taken by agent to reach goal. It indicates action 'a' to be taken which in state S. A policy is denoted as 'Pi' as `pi(s)` -> `infty`<br>
-				    		` pi ^ \ast ` is called optimal policy, which maximizes expected reward. Among all policy taken, optimal policy one that maximize the amount of reward received or expected to receive over a lifetime. For an MDP there's no end of lifetime and you have to decide end time.<br>
-				    		Policy is nothing but a guide telling which action to take for a given state. It is not a plan but uncovers the underlying plan of the environment by returning the actions to take for each state.
-				    		<br><br>
-				    		Markov Decision Process (MDP) is a tuple (S,A,T,r,?).
-				    		<br>
-                             <div class="row">
-                                <div class="col-md-7 text-center">
-                                	<br>
-                                    <img src="images/markov-decision-process.png" class="img-responsive" alt="markov decision process">
-                                </div>
-                                <div class="col-md-5 text-center">
-                                	` S ` : Set of Observations<br>
-                                	` A ` : Set of Actions<br>
-                                	` T ` : Transition Model<br>
-                                	` r ` : Reward Model<br>
-                                	` ? ` : Discount factor (between 0 & 1) represent relative importance between immediate and future reward.
-                                </div>
-                            </div>
-                            <br>
-                            <h3>Bellman Equation</h3>
-                            Bellman Equation, help us evaluate the expected reward relative to the advantage or disadvantage of each state.
-                            <br><br>
-                            Question that Bellman equation answers:<br> 
-                            Given a state I'm in, assuming I take the best possible action now and at each subsequent step, what long term reward can I expect.
-                            <br><b>OR</b><br>
-                            What is the value of the STATE?
-                            <br><br>
-                            Bellman equations are Dynamic Programming Equations. If you dont know about dynamic programming, it is better to clear your concepts about dynamic programming.
-                            <br><br>
-                            <h4>For Deterministic Environment</h4>
-                            In Deterministic enviroment, an agent will follow what the command is given to it. There is no probability of following some other action.
-                            <div class="row">
-                                <div class="col-md-5 text-center">
-                                	<br>
-                                	<h3>$$ V(s) = max_a \Bigl( R(s,a) + \gamma V(s') \Bigl) $$ </h3>
-                                </div>
-                                <div class="col-md-7 text-center">
-                                	` V ` : Value of given state s<br>
-                                	` max_a ` : Maximum for action a<br>
-                                	` R ` : reward for action a in state s<br>
-                                	` &gamma; ` : discount factor (Gamma)<br>
-                                	` s `: Next state by choosing action a<br>
-                                </div>
-                            </div>
-                            <h4>For Stochastic Environment</h4>
-                            In stochastic environment, an agent will not always follow what we tell it to do. There is always a probability of following your commands. For this we will have to modify our Bellman equation as follows:
-                            <div class="row">
-                                <div class="col-md-7 text-center">
-                                	<br>
-                                	<h3>$$ V(s) = max_a \Bigl( R(s,a) + \gamma \sum_{s'} P(s,a,s') V(s') \Bigl) $$</h3>
-                                </div>
-                                <div class="col-md-5 text-center">
-                                	` V ` : Value of given state s <br>
-                                	`max_a`:Maximum for action a <br>
-                                	` R  ` : reward for action a in state s <br>
-                                	` \gamma ` : discount factor (Gamma)<br>
-                                	` s' ` : Next state by choosing action a<br>
-                                </div>
-                            </div>
-                            <h3>Value Functions</h3>
-                            It estimates "how good" a state is for an agent to be in. Equal to expected discounted reward per agent when starting from state 's' and successfully following policy ` pi ` for an action. May also be referred as 'Value of policy.'
-                            <br><br>
-                            <b>Two types of value functions.</b>
-                            <ol>
-                            	<li><b>State-Value Functions</b> : Expected/Discounted reward when starting in state 's' and successfully following policy '` pi `' for an action. Denoted as ` V(s) or V_pi(s) `. How good is a state.</li>
-                            	<li><b>Action-Value Function</b> : Action 'a' to state 's' and return a real value. Referred as Q-function. Denoted as ` Q(s,a)`. How good is a state action pair for agent in environment.</li>
-                            </ol>
-                            Optimal value function is a value function of a state for an optimal policy `pi^ast`, which maximizes discounted reward. Among all value function, there exist a one higher value function for all states denoted by ` V^ast(s) `.
-						</p>
-						<h2>Policy Optimization</h2>
-						<p>
-							Until now we have studied about Reinforcement Learning environment, and we have also learned what our goal is in that enviroment i.e. to find Optimal Policy or say to find optimal value function because one will lead to another. In this blog we will discuss policy optimization using planning by dynamic programming. Dynamic Programming assumes full knowledge of MDP. It is used for planning in a MDP.
-							<br><br>
-							<b>Here we will discuss, 2 methods:</b><br>
-							<ol>
-                            	<li><b>Policy Iteration</b> : Policy Evaluation `+` Policy Improvement and the two are expected iteratively until policy converges.</li>
-                            	<li><b>Value Iteration</b> : Finding optimal value function `+` one policy extraction. There is not repeat of the two because once the value function is optimal, then policy out of it should also be optimal.</li>
-                            </ol>
-                            <br>
-                             <h3>1. Policy Iteration</h3>
-                            <b>Problem</b> : Given a policy `pi`, Find the optimal policy `pi^ast`.<br>
-                            <div class="row">
-                                <div class="col-md-1 text-center">
-                                	<b>Solution</b>:
-                                </div>
-                                <div class="col-md-11 text-center">
-                                	<ul>
-                        				<li>Evaluate the policy `pi`.
-                        					$$ V_{\pi}(s) = E\Big[ R_{t+1} + \gamma R_{t+2} + .... | s_t = s \Big] $$
-                        				</li>
-                        				<li>Improve the policy by acting greedily with respect to `V_pi`.
-                        					$$ \pi^\ast = greedy\Big( V_{\pi} \Big) $$
-                        				</li>
-                            		</ul>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-7 text-center">
-                                	<br>
-                                    <img src="images/policy_iteration.png" class="img-responsive" alt="policy iteration">
-                                </div>
-                                <div class="col-md-5 text-center">
-                                	<br>
-                                	<ul>
-                                	<li><b>Policy evaluation</b> - Estimate `V_{pi}`, Iterative policy evaluation</li>
-									<li><b>Policy improvement</b> - Generate ` pi^' >= pi `, Greedy policy improvement</li>
-                                	</ul>
-                                </div>
-                            </div>
-                            <br><br>
-                            <b>Lets discuss the Policy Evaluation</b><br>
-                            <ul>
-	                            <li>Iterative application of Bellman expectation backup.</li>
-	                            <li>` V_1 -> V_2 -> V_3 -> .... -> V_{pi} `.<br>Start with random value function and iteratively figure out new value function.</li>
-	                            <li>Using Synchronous backups:<br>
-	                            	<ul>
-	                            		<li> at each iteration k+1</li>
-	                            		<li> For all state `s\inS`</li>
-	                            		<li> Update `V_{k+1}(s)` from `V_k(s')` using bellman expectation equation.
-	                            				$$ V_{k+1}(s) = \sum_{a \in A} \pi(a|s)\Big( R_s^a + \gamma \sum_{s' \in S} P_{ss'}^a V_k(s') \Big) $$
-	                            				$$ V^{k+1} = R^{\pi} + \gamma P^{\pi}V^{k} $$
-	                            		</li>
-	                            		<li> Where `s'` is successor of state `s`.
-	                            	</ul>
-	                            </li>
-                            </ul>
-                            <br>
-                            <b>Lets discuss the Policy Improvement</b><br>
-                            <ul>
-                            	<li>Find the best policy from the value function obtained from policy evaluation using greedy method.</li>
-                            	<li>This process of policy iteration always converges to `pi^ast`.</li>
-                        	</ul>
-                        	<br>
-                        	<b>Example:</b> Below is the example code for policy iteration for Frozen Lake environment using OpenAI gym library. Play with code and put doubts in comment section below.<br>
-                        	<script src="https://gitlab.com/snippets/1765536.js"></script>
-                        	<h3>2. Value Iteration</h3>
-                        	<b>Problem</b> : Find Optimal Policy `pi^ast`.<br>
-                        	<b>Solution</b> : Iterative application of Bellman optimality backup.<br>
-                        	<ul>
-	                            <li>` V_1 -> V_2 -> V_3 -> .... -> V_ast `. Start with random value function and update values using bellman optimality equation.</li>
-	                            <li>Using Synchronous backups:<br>
-	                            	<ul>
-	                            		<li> at each iteration k+1</li>
-	                            		<li> For all state `s\inS`</li>
-	                            		<li> Update `V_{k+1}(s)` from `V_k(s')` using bellman optimality equation.
-	                            				$$ V_{k+1}(s) =  \max_{a \in A} \Big( R^a_s + \gamma \sum_{s' \in S} P^a_{ss'} V_k(s') \Big) $$
-	                            				$$ V_{k+1} = \max_{a \in A} \Big( R^a + \gamma P^aV_k \Big) $$
-	                            		</li>
-	                            		<li> Where `s'` is successor of state `s`.
-	                            	</ul>
-	                            </li>
-                            	<li>Unlike policy iteration, there is no explicit policy.</li>
-                            	<li>Intermediate value functio may not correspond to any policy.</li>
-                            	<li>After we finally get optimal value function, we will extract policy using greedy method from that value function. We have to do this only once because optimal value function always gives optimal policy.</li>
-                            </ul>
-                            <b>Example : </b>Below is the example code for value iteration for Frozen Lake environment using OpenAI gym library. Play with code and put doubts in comment section below.<br>
-                        	<script src="https://gitlab.com/snippets/1765537.js"></script>
-                        	<br>
-                        	<h3>Conclusions</h3>
-                        	<table>
-							    <thead>
-							      <tr>
-							        <th>Problem</th>
-							        <th>Bellman Equation</th>
-							        <th>Algorithm</th>
-							      </tr>
-							    </thead>
-							    <tbody>
-							      <tr>
-							      	<td>Prediction</td>
-							        <td>Bellman Expectation Equation</td>
-							        <td>Iterative Policy Evaluation</td>
-							      </tr>
-							      <tr>
-							        <td>Control</td>
-							        <td>Bellman Expectation Equation + Greedy Policy Improvement</td>
-							        <td>Policy Iteration</td>
-							      </tr>
-							      <tr>
-							        <td>Control</td>
-							        <td>Bellman Optimality Equation</td>
-							        <td>Value Iteration</td>
-							      </tr>
-							     </tbody>
-						  </table>
-						  <ul>
-						  	<li>Algorithms are based on state-value function `V_pi(s) or V_ast(s)`</li>
-						  	<li>Complexity `O(mn^2 )` per iteration, for m actions and n states</li>
-						  	<li>Could also apply to action-value function `q_pi(s, a) or q^ast(s, a)`</li>
-						  	<li>Complexity `O(m^2n^2 )` per iteration</li>
-						  </ul>
-						</p>
 
-						<h2>More Resources</h2>
-                        <ol>
-                            <li><a href="http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching_files/DP.pdf" target="_blank">RL Course of David Silver - PPT</a></li>
-                            <li><a href="https://www.youtube.com/watch?v=Nd1-UUMVfz4" target="_blank">RL Course of David Silver - Lecture</a></li>
-                            <li><a href="https://www.youtube.com/watch?v=aAkFtRxeP7c" target="_blank">Bellman equation tutorial for reinforcement Learning</a></li>
-                            <li><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes" target="_blank">Example codes and problems to understand policy optimization better.</a></li>
-                        </ol>
-		    		</div>
-		    	</div>
-                <script>
-                    var disqus_config = function () {
-                    this.page.url = "https://adityajn105.github.io/blogs/policy-optimization-rl.html";  // Replace PAGE_URL with your page's canonical URL variable
-                    this.page.identifier = 3; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-                    };
-                    (function() { // DON'T EDIT BELOW THIS LINE
-                    var d = document, s = d.createElement('script');
-                    s.src = 'https://adityajn105.disqus.com/embed.js';
-                    s.setAttribute('data-timestamp', +new Date());
-                    (d.head || d.body).appendChild(s);
-                    })();
-                </script>
-		    	<div class="col-md-8" id="disqus_thread"></div>
-		    </div>
-		</div>
-    </div>
-
-    <div id="contact">
-        <h2>Get in Touch</h2>
-        <div id="contact-form">
-            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
-                <input type="hidden" name="_subject" value="Contact request from personal website" />
-                <input type="email" name="_replyto" placeholder="Your email" required>
-                <textarea name="message" placeholder="Your message" required></textarea>
-                <button type="submit">Send</button>
-            </form>
-        </div>
-        <!-- End #contact-form -->
-    </div>
-    <!-- End #contact -->
-
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-5 copyright">
+<div class="right-col-block blocks">
+<div class="theiaStickySidebar">
+<section class="section-wrapper section-interest gray-bg">
+    <div class="container-fluid">
+        <div class="col-md-12">
                     <p>
-                        Copyright &copy; 2018 Aditya Jain
-                    </p>
-                </div>
-                <div class="col-sm-2 top">
-                    <span id="to-top">
-                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
-                    </span>
-                </div>
-                <div class="col-sm-5 social">
+                    Before we go ahead and start discussing about policy optimization methods in Reinforcement Learning. Let me first clear few terms such as markov decision process, bellman equation, states, actions, rewards, policy, value functions etc. So lets understand them one by one.
+                    <br><br>
+                    In Reinforcement Learning, An AI agent learn how to optimally interact in a Real Time environment using Time-Delayed Labels called as Rewards as a signal.
+                    <br>
+                    <b>Markov Decision Process</b> is a mathematical framework for defining the reinforcement learning problem using STATES, ACTIONS, REWARDS. 
+                    <br>Through interacting with an environment, an AI will learn a policy which will return an action for a given STATE with the highest reward.
+                    <br>
+                    <h3>Markov Decision Process(MDP)</h3>
+                    Reinforcement Learning problems are mathematically described using framework called Markov Decision Process(MDP). MDP are extended version of Markov Chain which adds decision and rewards to it. Markov indicates 'Markovian Property' means future state is independent of any previous state history given current state and action. Current state contains all that is needed to decide the future state when input action is given. This simplifies things a lot. Example "In a game of Chess".
+                    <br><br>
+                    MDP is an approach in achieving reinforcement learing to take decisions in a matrix. A grid would consist of states in form of grid. MDP tries to capture world in form of grid by dividing it into states, actions, transition matrix and rewards. The solution of MDP is policy and objective is to find optimal policy for task that MDP is imposed. Thus any reinforcement learning task is composed of set of states, actions and rewards that follow markov property is considered as MDP.
+                    <br><br>
+                    <b>State : </b> A set of tokens that represent every condition that agent can be in.<br>
+                    <b>Model : </b> model or transition model gives an action's effect in state. In particular `T(s,a,s')` defines transition T where being in state S, taking action 'a' takes us to state 's'. For stochastic actions (noisy, non-deterministic) we define probabiliity `P(S'|S,a)` which represent probability of reaching S' if action 'a' is taken in state S.<br>
+                    <b>Action : </b> Action 'a' is set of all possible decision, a(s) defines set of action that can be taken in state S.<br>
+                    <b>Reward : </b> It is a real-valued response to action. ` R(s) ` indicate reward for being in state 's'. ` R(s,a) ` is reward for being in state 's' and taking action 'a'. ` R(s,a,s') ` indicates reward for being in state 's', taking action 'a' and ending up in state 's'.<br>
+                    <b>Policy : </b> It is a solution to Markov Decision Process. It is set of actions that are taken by agent to reach goal. It indicates action 'a' to be taken which in state S. A policy is denoted as 'Pi' as `pi(s)` -> `infty`<br>
+                    ` pi ^ \ast ` is called optimal policy, which maximizes expected reward. Among all policy taken, optimal policy one that maximize the amount of reward received or expected to receive over a lifetime. For an MDP there's no end of lifetime and you have to decide end time.<br>
+                    Policy is nothing but a guide telling which action to take for a given state. It is not a plan but uncovers the underlying plan of the environment by returning the actions to take for each state.
+                    <br><br>
+                    Markov Decision Process (MDP) is a tuple (S,A,T,r,?).
+                    <br>
+                     <div class="row">
+                        <div class="col-md-7 text-center">
+                            <br>
+                            <img src="images/markov-decision-process.png" class="img-responsive" alt="markov decision process">
+                        </div>
+                        <div class="col-md-5 text-center">
+                            ` S ` : Set of Observations<br>
+                            ` A ` : Set of Actions<br>
+                            ` T ` : Transition Model<br>
+                            ` r ` : Reward Model<br>
+                            ` ? ` : Discount factor (between 0 & 1) represent relative importance between immediate and future reward.
+                        </div>
+                    </div>
+                    <br>
+                    <h3>Bellman Equation</h3>
+                    Bellman Equation, help us evaluate the expected reward relative to the advantage or disadvantage of each state.
+                    <br><br>
+                    Question that Bellman equation answers:<br> 
+                    Given a state I'm in, assuming I take the best possible action now and at each subsequent step, what long term reward can I expect.
+                    <br><b>OR</b><br>
+                    What is the value of the STATE?
+                    <br><br>
+                    Bellman equations are Dynamic Programming Equations. If you dont know about dynamic programming, it is better to clear your concepts about dynamic programming.
+                    <br><br>
+                    <h4>For Deterministic Environment</h4>
+                    In Deterministic enviroment, an agent will follow what the command is given to it. There is no probability of following some other action.
+                    <div class="row">
+                        <div class="col-md-5 text-center">
+                            <br>
+                            <h3>$$ V(s) = max_a \Bigl( R(s,a) + \gamma V(s') \Bigl) $$ </h3>
+                        </div>
+                        <div class="col-md-7 text-center">
+                            ` V ` : Value of given state s<br>
+                            ` max_a ` : Maximum for action a<br>
+                            ` R ` : reward for action a in state s<br>
+                            ` &gamma; ` : discount factor (Gamma)<br>
+                            ` s `: Next state by choosing action a<br>
+                        </div>
+                    </div>
+                    <h4>For Stochastic Environment</h4>
+                    In stochastic environment, an agent will not always follow what we tell it to do. There is always a probability of following your commands. For this we will have to modify our Bellman equation as follows:
+                    <div class="row">
+                        <div class="col-md-7 text-center">
+                            <br>
+                            <h3>$$ V(s) = max_a \Bigl( R(s,a) + \gamma \sum_{s'} P(s,a,s') V(s') \Bigl) $$</h3>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            ` V ` : Value of given state s <br>
+                            `max_a`:Maximum for action a <br>
+                            ` R  ` : reward for action a in state s <br>
+                            ` \gamma ` : discount factor (Gamma)<br>
+                            ` s' ` : Next state by choosing action a<br>
+                        </div>
+                    </div>
+                    <h3>Value Functions</h3>
+                    It estimates "how good" a state is for an agent to be in. Equal to expected discounted reward per agent when starting from state 's' and successfully following policy ` pi ` for an action. May also be referred as 'Value of policy.'
+                    <br><br>
+                    <b>Two types of value functions.</b>
+                    <ol>
+                        <li><b>State-Value Functions</b> : Expected/Discounted reward when starting in state 's' and successfully following policy '` pi `' for an action. Denoted as ` V(s) or V_pi(s) `. How good is a state.</li>
+                        <li><b>Action-Value Function</b> : Action 'a' to state 's' and return a real value. Referred as Q-function. Denoted as ` Q(s,a)`. How good is a state action pair for agent in environment.</li>
+                    </ol>
+                    Optimal value function is a value function of a state for an optimal policy `pi^ast`, which maximizes discounted reward. Among all value function, there exist a one higher value function for all states denoted by ` V^ast(s) `.
+                </p>
+                <h2>Policy Optimization</h2>
+                <p>
+                    Until now we have studied about Reinforcement Learning environment, and we have also learned what our goal is in that enviroment i.e. to find Optimal Policy or say to find optimal value function because one will lead to another. In this blog we will discuss policy optimization using planning by dynamic programming. Dynamic Programming assumes full knowledge of MDP. It is used for planning in a MDP.
+                    <br><br>
+                    <b>Here we will discuss, 2 methods:</b><br>
+                    <ol>
+                        <li><b>Policy Iteration</b> : Policy Evaluation `+` Policy Improvement and the two are expected iteratively until policy converges.</li>
+                        <li><b>Value Iteration</b> : Finding optimal value function `+` one policy extraction. There is not repeat of the two because once the value function is optimal, then policy out of it should also be optimal.</li>
+                    </ol>
+                    <br>
+                     <h3>1. Policy Iteration</h3>
+                    <b>Problem</b> : Given a policy `pi`, Find the optimal policy `pi^ast`.<br>
+                    <div class="row">
+                        <div class="col-md-1 text-center">
+                            <b>Solution</b>:
+                        </div>
+                        <div class="col-md-11 text-center">
+                            <ul>
+                                <li>Evaluate the policy `pi`.
+                                    $$ V_{\pi}(s) = E\Big[ R_{t+1} + \gamma R_{t+2} + .... | s_t = s \Big] $$
+                                </li>
+                                <li>Improve the policy by acting greedily with respect to `V_pi`.
+                                    $$ \pi^\ast = greedy\Big( V_{\pi} \Big) $$
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-7 text-center">
+                            <br>
+                            <img src="images/policy_iteration.png" class="img-responsive" alt="policy iteration">
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <br>
+                            <ul>
+                            <li><b>Policy evaluation</b> - Estimate `V_{pi}`, Iterative policy evaluation</li>
+                            <li><b>Policy improvement</b> - Generate ` pi^' >= pi `, Greedy policy improvement</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <br><br>
+                    <b>Lets discuss the Policy Evaluation</b><br>
                     <ul>
-                        <li>
-                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
+                        <li>Iterative application of Bellman expectation backup.</li>
+                        <li>` V_1 -> V_2 -> V_3 -> .... -> V_{pi} `.<br>Start with random value function and iteratively figure out new value function.</li>
+                        <li>Using Synchronous backups:<br>
+                            <ul>
+                                <li> at each iteration k+1</li>
+                                <li> For all state `s\inS`</li>
+                                <li> Update `V_{k+1}(s)` from `V_k(s')` using bellman expectation equation.
+                                        $$ V_{k+1}(s) = \sum_{a \in A} \pi(a|s)\Big( R_s^a + \gamma \sum_{s' \in S} P_{ss'}^a V_k(s') \Big) $$
+                                        $$ V^{k+1} = R^{\pi} + \gamma P^{\pi}V^{k} $$
+                                </li>
+                                <li> Where `s'` is successor of state `s`.
+                            </ul>
                         </li>
                     </ul>
+                    <br>
+                    <b>Lets discuss the Policy Improvement</b><br>
+                    <ul>
+                        <li>Find the best policy from the value function obtained from policy evaluation using greedy method.</li>
+                        <li>This process of policy iteration always converges to `pi^ast`.</li>
+                    </ul>
+                    <br>
+                    <b>Example:</b> Below is the example code for policy iteration for Frozen Lake environment using OpenAI gym library. Play with code and put doubts in comment section below.<br>
+                    <script src="https://gitlab.com/snippets/1765536.js"></script>
+                    <h3>2. Value Iteration</h3>
+                    <b>Problem</b> : Find Optimal Policy `pi^ast`.<br>
+                    <b>Solution</b> : Iterative application of Bellman optimality backup.<br>
+                    <ul>
+                        <li>` V_1 -> V_2 -> V_3 -> .... -> V_ast `. Start with random value function and update values using bellman optimality equation.</li>
+                        <li>Using Synchronous backups:<br>
+                            <ul>
+                                <li> at each iteration k+1</li>
+                                <li> For all state `s\inS`</li>
+                                <li> Update `V_{k+1}(s)` from `V_k(s')` using bellman optimality equation.
+                                        $$ V_{k+1}(s) =  \max_{a \in A} \Big( R^a_s + \gamma \sum_{s' \in S} P^a_{ss'} V_k(s') \Big) $$
+                                        $$ V_{k+1} = \max_{a \in A} \Big( R^a + \gamma P^aV_k \Big) $$
+                                </li>
+                                <li> Where `s'` is successor of state `s`.
+                            </ul>
+                        </li>
+                        <li>Unlike policy iteration, there is no explicit policy.</li>
+                        <li>Intermediate value functio may not correspond to any policy.</li>
+                        <li>After we finally get optimal value function, we will extract policy using greedy method from that value function. We have to do this only once because optimal value function always gives optimal policy.</li>
+                    </ul>
+                    <b>Example : </b>Below is the example code for value iteration for Frozen Lake environment using OpenAI gym library. Play with code and put doubts in comment section below.<br>
+                    <script src="https://gitlab.com/snippets/1765537.js"></script>
+                    <br>
+                    <h3>Conclusions</h3>
+                    <table>
+                        <thead>
+                          <tr>
+                            <th>Problem</th>
+                            <th>Bellman Equation</th>
+                            <th>Algorithm</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Prediction</td>
+                            <td>Bellman Expectation Equation</td>
+                            <td>Iterative Policy Evaluation</td>
+                          </tr>
+                          <tr>
+                            <td>Control</td>
+                            <td>Bellman Expectation Equation + Greedy Policy Improvement</td>
+                            <td>Policy Iteration</td>
+                          </tr>
+                          <tr>
+                            <td>Control</td>
+                            <td>Bellman Optimality Equation</td>
+                            <td>Value Iteration</td>
+                          </tr>
+                         </tbody>
+                  </table>
+                  <ul>
+                    <li>Algorithms are based on state-value function `V_pi(s) or V_ast(s)`</li>
+                    <li>Complexity `O(mn^2 )` per iteration, for m actions and n states</li>
+                    <li>Could also apply to action-value function `q_pi(s, a) or q^ast(s, a)`</li>
+                    <li>Complexity `O(m^2n^2 )` per iteration</li>
+                  </ul>
+                </p>
+
+                <h2>More Resources</h2>
+                <ol>
+                    <li><a href="http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching_files/DP.pdf" target="_blank">RL Course of David Silver - PPT</a></li>
+                    <li><a href="https://www.youtube.com/watch?v=Nd1-UUMVfz4" target="_blank">RL Course of David Silver - Lecture</a></li>
+                    <li><a href="https://www.youtube.com/watch?v=aAkFtRxeP7c" target="_blank">Bellman equation tutorial for reinforcement Learning</a></li>
+                    <li><a href="https://github.com/adityajn105/Move37/tree/master/Classroom-Codes" target="_blank">Example codes and problems to understand policy optimization better.</a></li>
+                </ol>
+        </div>
+        <script>
+            var disqus_config = function () {
+            this.page.url = "";  // Replace PAGE_URL with your page's canonical URL variable
+            this.page.identifier = 3; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+            };
+            (function() { // DON'T EDIT BELOW THIS LINE
+            var d = document, s = d.createElement('script');
+            s.src = 'https://adityajn105.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <div id="disqus_thread"></div>      
+    </div>
+</section>
+<section class="section-contact section-wrapper gray-bg">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="section-title">
+                    <h2>Contact</h2>
                 </div>
             </div>
         </div>
-    </footer>
-    <!-- End footer -->
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="/js/scripts.min.js"></script>
-    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="feedback-form">
+                    <h2>Get in touch</h2>
+
+                    <form id="contactForm" action="https://formspree.io/adityajn105@gmail.com" method="POST" target='_blank'>
+                        <div class="form-group">
+                            <input type="hidden" name="_subject" value="Contact request from personal website" 
+                            class="form-control" id="InputSubject">
+                        </div>
+                        <div class="form-group">
+                            <label for="InputEmail">Email address</label>
+                            <input type="email" name="_replyto" required="" class="form-control" id="InputEmail"
+                                   placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">Message</label>
+                            <textarea class="form-control" rows="4" required="" name="message" id="message-text"
+                                      placeholder="Write message"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--.container-fluid-->
+</section>
+
+<footer class="footer">
+    <div class="copyright-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="copytext">&copy; Resumex. All rights reserved | Design By: <a
+                            href="https://themehippo.com">themehippo</a></div>
+                </div>
+            </div>
+            <!--.row-->
+        </div>
+        <!-- .container-fluid -->
+    </div>
+    <!-- .copyright-section -->
+</footer>
+<!-- .footer -->
+</div>
+<!-- Sticky -->
+</div>
+<!-- .right-col-block -->
+</div>
+<!-- .columns-block -->
+</div>
+<!-- #main-wrapper -->
+
+<!-- jquery -->
+<script src="../js/jquery-2.1.4.min.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<script src="../js/theia-sticky-sidebar.js"></script>
+<script src="../js/scripts.js"></script>
 </body>
 </html>

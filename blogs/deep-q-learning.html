@@ -1,96 +1,106 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title> Deep Q Learning | Blogs | Aditya Jain</title>
 
     <meta name="description" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments"/>
-	<meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, deep q networks, dueling, prioritized experience replay" />
-	<meta name="author" content="Aditya Jain" />
-	<!-- Facebook and Twitter integration -->
-	<meta property="og:title" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments | Blog by Aditya Jain"/>
-	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
-	<meta property="og:url" content="https://adityajn105.github.io/blogs/deep-q-learning.html"/>
-	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
-	<meta property="og:description" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments"/>
-	<meta name="twitter:title" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments | Blog by Aditya Jain" />
-	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
-	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/deep-q-learning.html" />
+    <meta name="keywords" content="adityajn105, aditya, jain, data science, reinforcement learning, deep q networks, dueling, prioritized experience replay" />
+    <meta name="author" content="Aditya Jain" />
+    <!-- Facebook and Twitter integration -->
+    <meta property="og:title" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments | Blog by Aditya Jain"/>
+    <meta property="og:image" content="../favicon.ico"/>
+    <meta property="og:url" content="blogs/deep-q-learning.html"/>
+    <meta property="og:site_name" content="Aditya Jain | Portfolio"/>
+    <meta property="og:description" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments"/>
+    <meta name="twitter:title" content="Deep Q Networks to perform reinforcement learning in continuous state enviorments | Blog by Aditya Jain" />
+    <meta name="twitter:image" content="../favicon.ico" />
+    <meta name="twitter:url" content="blogs/deep-q-learning.html" />
 
-	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-	<link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="../libs/font-awesome/css/font-awesome.min.css">
-
+    <!-- favicon -->
+    <link href="../favicon.ico" rel=icon>
+    <!-- web-fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Hind:300,400,500,600,700" rel="stylesheet">
+    <!-- font-awesome -->
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/styles.css" rel="stylesheet">
+    <!-- Style CSS -->
+    <link href="style.css" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
-
-	  gtag('config', 'UA-123324949-1');
-	</script>
-	<script>
-		var disqus_config = function () {
-		this.page.url = "https://adityajn105.github.io/blogs/deep-q-learning.html";  // Replace PAGE_URL with your page's canonical URL variable
-		this.page.identifier = 5; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-		};
-		(function() { // DON'T EDIT BELOW THIS LINE
-		var d = document, s = d.createElement('script');
-		s.src = 'https://adityajn105.disqus.com/embed.js';
-		s.setAttribute('data-timestamp', +new Date());
-		(d.head || d.body).appendChild(s);
-		})();
-	</script>
-
-	 <!-- For MathJax -->
+      gtag('config', 'UA-123324949-1');
+    </script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
     <script type="text/x-mathjax-config">
-  		MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
-	</script>
-	<noscript>
-		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
-	</noscript>
-</head>
-<body>
-    <div id="mobile-menu-open" class="shadow-large">
-        <i class="fa fa-bars" aria-hidden="true"></i>
-    </div>
-    <!-- End #mobile-menu-toggle -->
-    <header>
-        <div id="mobile-menu-close">
-            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
-        </div>
-        <ul id="menu" class="shadow">
-            <li>
-                <a href="https://adityajn105.github.io/">Back</a>
-            </li>
-            <li>
-                <a href="#contact">Contact</a>
-            </li>
-        </ul>
-    </header>
+        MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+    </noscript>
 
-    <div id="blog">
-    	<div class="container">
-            <div class="row">
-	    		<h1>Deep Q Learning and Advancement over Deep Q Networks</h1>
-		    	<div id="blog-body">
-		    		<div class="col-md-8">
-		    			<h5>11 April 2019 | Aditya Jain</h5>
-			    		<p>
-				    		In the last blog we had discussed about monte carlo methods and temporal difference methods which are used to preform reinforcement learning in unknown MDP enviorment.
+</head>
+<body id="page-top" data-spy="scroll" data-target=".navbar">
+<div id="main-wrapper">
+<!-- Page Preloader -->
+<div id="preloader">
+    <div id="status">
+        <div class="status-mes"></div>
+    </div>
+</div>
+
+<div class="columns-block container">
+<div class="left-col-block blocks">
+    <header class="header theiaStickySidebar">
+        <h1></h1>
+        <div class="content">
+            <span class="lead">11 April 2019 | Aditya Jain</span>
+            <h2>Deep Q Learning and Advancement over Deep Q Networks</h2>
+
+            <h3>Contents</h3>
+            <ul>
+                 <li>Limitations of Q-Learning</li>
+                 <li><b>Deep Q-Learning</b></li>
+                 <li>Dueling DQN Architecture</li>
+                 <li>Prioritized Experience Replay</li>
+            </ul>
+
+            <ul class="social-icon">
+                <li><a href="https://github.com/adityajn105"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://linkedin.com/in/adityajn105"><i class="fa fa-linkedin fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.instagram.com/adityajn105/"><i class="fa fa-instagram fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://twitter.com/adityajn105"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.facebook.com/adityajn105"><i class="fa fa-facebook fa-2x" aria-hidden="true"></i></a></li>
+            </ul>
+
+            <a href="/" class="btn btn-primary">Go Back</a>
+        </div>
+
+    </header>
+    <!-- .header-->
+</div>
+<!-- .left-col-block -->
+
+
+<div class="right-col-block blocks">
+<div class="theiaStickySidebar">
+<section class="section-wrapper section-interest gray-bg">
+    <div class="container-fluid">
+        <div class="col-md-12">
+                <p>
+                In the last blog we had discussed about monte carlo methods and temporal difference methods which are used to preform reinforcement learning in unknown MDP enviorment.
                 We also learnt about Q-Learning which is an off-policy Temporal Difference control method. In this blog, we will understand some of the limitation of traditional Q-Learning
                 and will learn about Deep Q-Learning and will also build a Flappy Bird Reinforcement Learning agent with some advanced Deep Q Networks. Before that, if you dont know what
                 Q Learning is or have no idea about reinforcement learning, please checkout my last blog (below link).
                 <br><br>
-                <a href='https://adityajn105.github.com/blogs/monte-carlo-and-temporal-difference.html'>Monte Carlo and Temporal Difference Learning in an Unknown MDP environment.</a>
+                <a href='blogs/monte-carlo-and-temporal-difference.html'>Monte Carlo and Temporal Difference Learning in an Unknown MDP environment.</a>
                 <br><br>
                 Q-Learning is an off-policy Learning which is a development over on-policy TD control i.e. SARSA. Q-learning tries to estimate a state-action value function for target policy that
                 deterministically selects the action of highest value. Q-Learning in the end produces a Q-table "a cheat-sheet" that an agent uses to find the best action to take given a state.
@@ -103,13 +113,13 @@
                 2. In the enviroments where there is no discrete states and there are continuous values represnting state of environment.
                 Then it is not possible to use traditional Q-Learning.
                 </p>
-			    		<h2>Deep Q-Learning : </h2>
-			    		<p> Q-table is a good strategy — however, this is not scalable. Instead of using a Q-table, we’ll implement a Neural Network that takes a state and approximates Q-values for each action based on that state.
+              <h2>Deep Q-Learning : </h2>
+              <p> Q-table is a good strategy — however, this is not scalable. Instead of using a Q-table, we’ll implement a Neural Network that takes a state and approximates Q-values for each action based on that state.
                 Imagine any GTA game where an agaent can be millions of state and making a Q-table for them would not be efficient at all. The best idea in this case is to create a neural network that will approximate,
                 given a state, the different Q-values for each action.
               <br><br>
                 <img src="https://cdn-images-1.medium.com/max/800/1*w5GuxedZ9ivRYqM_MLUxOQ.png" class="img-responsive">
-			    		<br><br>
+              <br><br>
               For the reinforcement learning agent for flappy bird game our deep Q Network will work like this:
               <br><br>
               We will stack 4 frames of game in one array and this will act as a input the neural network. We will use four frames because
@@ -170,76 +180,99 @@
               </p>
               <a href="https://github.com/adityajn105/flappy-bird-deep-q-learning"><h2>Click to view all code.</h2></a> 
 
-						<h2>More Resources</h2>
+            <h2>More Resources</h2>
                 <ol>
                     <li><a href="https://medium.freecodecamp.org/an-introduction-to-deep-q-learning-lets-play-doom-54d02d8017d8" target="_blank">Introduction to Deep Q Learning</a></li>
                     <li><a href="https://medium.freecodecamp.org/improvements-in-deep-q-learning-dueling-double-dqn-prioritized-experience-replay-and-fixed-58b130cc5682" target="_blank">Improvements in Deep Q Learning</a></li>
                     <li><a href="https://arxiv.org/abs/1511.05952" target="_blank">Prioritized Experience Replay by Google Deep Mind</a></li>
                     <li><a href="https://jaromiru.com/2016/11/07/lets-make-a-dqn-double-learning-and-prioritized-experience-replay/" target="_blank">Jaromiru's blog about LET’S MAKE A DQN</a></li>
                 </ol>
-		    		</div>
-		    	</div>
-		    	<div class="col-md-8" id="disqus_thread"></div>
-		    </div>
-		</div>
-    </div>
-
-    <div id="contact">
-        <h2>Get in Touch</h2>
-        <div id="contact-form">
-            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
-                <input type="hidden" name="_subject" value="Contact request from personal website" />
-                <input type="email" name="_replyto" placeholder="Your email" required>
-                <textarea name="message" placeholder="Your message" required></textarea>
-                <button type="submit">Send</button>
-            </form>
         </div>
-        <!-- End #contact-form -->
+        <script>
+            var disqus_config = function () {
+            this.page.url = "";  // Replace PAGE_URL with your page's canonical URL variable
+            this.page.identifier = 5; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+            };
+            (function() { // DON'T EDIT BELOW THIS LINE
+            var d = document, s = d.createElement('script');
+            s.src = 'https://adityajn105.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <div id="disqus_thread"></div>      
     </div>
-    <!-- End #contact -->
-
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-5 copyright">
-                    <p>
-                        Copyright &copy; 2018 Aditya Jain
-                    </p>
-                </div>
-                <div class="col-sm-2 top">
-                    <span id="to-top">
-                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
-                    </span>
-                </div>
-                <div class="col-sm-5 social">
-                    <ul>
-                        <li>
-                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                        </li>
-                    </ul>
+</section>
+<section class="section-contact section-wrapper gray-bg">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="section-title">
+                    <h2>Contact</h2>
                 </div>
             </div>
         </div>
-    </footer>
-    <!-- End footer -->
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="/js/scripts.min.js"></script>
-    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="feedback-form">
+                    <h2>Get in touch</h2>
+
+                    <form id="contactForm" action="https://formspree.io/adityajn105@gmail.com" method="POST" target='_blank'>
+                        <div class="form-group">
+                            <input type="hidden" name="_subject" value="Contact request from personal website" 
+                            class="form-control" id="InputSubject">
+                        </div>
+                        <div class="form-group">
+                            <label for="InputEmail">Email address</label>
+                            <input type="email" name="_replyto" required="" class="form-control" id="InputEmail"
+                                   placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">Message</label>
+                            <textarea class="form-control" rows="4" required="" name="message" id="message-text"
+                                      placeholder="Write message"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--.container-fluid-->
+</section>
+
+<footer class="footer">
+    <div class="copyright-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="copytext">&copy; Resumex. All rights reserved | Design By: <a
+                            href="https://themehippo.com">themehippo</a></div>
+                </div>
+            </div>
+            <!--.row-->
+        </div>
+        <!-- .container-fluid -->
+    </div>
+    <!-- .copyright-section -->
+</footer>
+<!-- .footer -->
+</div>
+<!-- Sticky -->
+</div>
+<!-- .right-col-block -->
+</div>
+<!-- .columns-block -->
+</div>
+<!-- #main-wrapper -->
+
+<!-- jquery -->
+<script src="../js/jquery-2.1.4.min.js"></script>
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<script src="../js/theia-sticky-sidebar.js"></script>
+<script src="../js/scripts.js"></script>
 </body>
 </html>

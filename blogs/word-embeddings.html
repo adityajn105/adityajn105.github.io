@@ -1,32 +1,35 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Word Embedding | Blogs | Aditya Jain</title>
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Aditya Jain |  Blogs | Word Embeddings</title>
 
-    <meta name="description" content="Word Embedding is used convert textual representation of word to numerical representation."/>
-	<meta name="keywords" content="adityajn105, aditya, jain, data science, deep learning, machine learning, nlp, word embedding" />
-	<meta name="author" content="Aditya Jain" />
-	<!-- Facebook and Twitter integration -->
-	<meta property="og:title" content="Word Embedding | Blog by Aditya Jain"/>
-	<meta property="og:image" content="https://adityajn105.github.io/favicon.ico"/>
-	<meta property="og:url" content="https://adityajn105.github.io/blogs/word-embeddings.html"/>
-	<meta property="og:site_name" content="Aditya Jain | Portfolio"/>
-	<meta property="og:description" content="Word Embedding is used convert textual representation of word to numerical representation."/>
-	<meta name="twitter:title" content="Word Embedding | Blog by Aditya Jain" />
-	<meta name="twitter:image" content="https://adityajn105.github.io/favicon.ico" />
-	<meta name="twitter:url" content="https://adityajn105.github.io/blogs/word-embeddings.html" />
+    <meta name="description" content="In NLP application, we have to convert word into some sort of numerical representation. "/>
+    <meta name="keywords" content="adityajn105, aditya, jain, data science, deep learning, machine learning, nlp, android" />
+    <meta name="author" content="Aditya Jain" />
 
-	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-	<link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,900" rel="stylesheet">
-    <link rel="stylesheet" href="../libs/font-awesome/css/font-awesome.min.css">
+    <meta property="og:title" content="Aditya Jain | Word Embeddings"/>
+	<meta property="og:image" content="../favicon.ico"/>
+	<meta property="og:url" content=""/>
+	<meta property="og:site_name" content="Aditya Jain | Word Embeddings"/>
+	<meta property="og:description" content="In NLP application, we have to convert word into some sort of numerical representation. "/>
+	<meta name="twitter:title" content="Aditya Jain | Portfolio | Projects | Blogs" />
+	<meta name="twitter:image" content="../favicon.ico" />
+	<meta name="twitter:url" content="" />
+
+    <!-- favicon -->
+    <link href="../favicon.ico" rel=icon>
+    <!-- web-fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Hind:300,400,500,600,700" rel="stylesheet">
+    <!-- font-awesome -->
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <!-- Bootstrap -->
     <link href="../css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/styles.css" rel="stylesheet">
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <!-- Style CSS -->
+    <link href="style.css" rel="stylesheet">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-123324949-1"></script>
 	<script>
 	  window.dataLayer = window.dataLayer || [];
@@ -50,200 +53,217 @@
 	<noscript>
 		Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
 	</noscript>
+
 </head>
-<body>
-    <div id="mobile-menu-open" class="shadow-large">
-        <i class="fa fa-bars" aria-hidden="true"></i>
+<body id="page-top" data-spy="scroll" data-target=".navbar">
+<div id="main-wrapper">
+<!-- Page Preloader -->
+<div id="preloader">
+    <div id="status">
+        <div class="status-mes"></div>
     </div>
-    <!-- End #mobile-menu-toggle -->
-    <header>
-        <div id="mobile-menu-close">
-            <span>Close</span> <i class="fa fa-times" aria-hidden="true"></i>
+</div>
+
+<div class="columns-block container">
+<div class="left-col-block blocks">
+    <header class="header theiaStickySidebar">
+    	<h1></h1>
+        <div class="content">
+            <span class="lead">10 September 2018 | Aditya Jain</span>
+            <h2>Word Embeddings in Natural Language Processing</h2>
+
+			<h3>Contents</h3>
+            <ul>
+            	 <li><b>1. Frequency based Embedding</b></li>
+            	 <li>a. Count Vector</li>
+            	 <li>b. TfIdf Vector</li>
+            	 <li><b>2. Prediction Based Vector</b></li>
+            	 <li>a. CBOW (Continuous Bag of Words)</li>
+            	 <li>b. Skip Gram</li>
+            </ul>
+
+            <ul class="social-icon">
+            	<li><a href="https://github.com/adityajn105"><i class="fa fa-github fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://linkedin.com/in/adityajn105"><i class="fa fa-linkedin fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.instagram.com/adityajn105/"><i class="fa fa-instagram fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://twitter.com/adityajn105"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+                <li><a href="https://www.facebook.com/adityajn105"><i class="fa fa-facebook fa-2x" aria-hidden="true"></i></a></li>
+            </ul>
+
+            <a href="/" class="btn btn-primary">Go Back</a>
         </div>
-        <ul id="menu" class="shadow">
-            <li>
-                <a href="https://adityajn105.github.io/">Back</a>
-            </li>
-            <li>
-                <a href="#contact">Contact</a>
-            </li>
-        </ul>
+
     </header>
+    <!-- .header-->
+</div>
+<!-- .left-col-block -->
 
-    <div id="blog">
-    	<div class="container">
-            <div class="row">
-	    		<h1>Word Embedding</h1>
-		    	<div id="blog-body">
-		    		<div class="col-md-8">
-		    			<h5>10 September 2018 | Aditya Jain</h5>
-			    		<p>
-				    		In NLP application we have to work with texual data. 
-							Well we can't directly feed our textual data for training into our ML models, Deep Learning Models etc.
-							Let it be regression, classification or any NLP task, we need to convert our textual data into numerical form that can be feeded into models for futher processing.
-						</p>
-						<p>
-							Word Embedding converts textual data into numerical data of some form. In general, word embedding convert a word into some sort of vector representation.
-						</p>
-						<p>
-							Now, we will broadly classify word embedding in 2 types and then dive deep into their types
-							<br>
-							<ol>
-								<li>
-									<h3>Frequency based Embedding</h3>
-									<ul>
-										<li>Count Vector</li>
-										<li>Tf-Idf Vector</li>
-									</ul>
-								</li>
-								<li>
-									<h3>Prediction based Embedding</h3>
-									<ul>
-										<li>CBOW (Continous Bag of Words)</li>
-										<li>Skip-Gram</li>
-									</ul>
-								</li>
-							</ol>
-						</p>
-						<p>
-							<h2>1. Frequency based Embedding</h2>
-							These are the very basic, easy and fast method to word vectors. These work on the basis of count of word in each document. It can be Count Vector, Tf-Idf vector, or Co-Occurance vector. We will discuss here only Count vector and Tf-Idf vector.
 
-							<h3>1.1  Count Vector</h3>
-							Lets us understand this by looking into a simple example. Lets take two documents
-							<br><br>
-							d1 = "Take a look into the beauty of the word embedding."<br>
-							d2 = "The word vectorizer is the most basic word embedding"
-							<br><br>
-							There are 12 unique words, So here our word vector will be of size 12, which means each word can be denoted by a vector of size 12.
-							<br><br>
-							Lets, arrange all unique words in alphabetic order. That would be "basic, beauty, embedding, into, is, look, most, take, the, vectorizer, word".
-							<br><br>
-							Now lets prepare a dictionary where each word is mapped with index in vector.
-							<br>
-							<code>
-							{'basic': 0,'beauty': 1,'embedding': 2,'into': 3,'is': 4,'look': 5,'most': 6,'of': 7,'take': 8,'the': 9,'vectorizer': 10,'word': 11}
-							</code>
-							<br><br>
-							So, suppose we want to denote a word by vector.<br>
-							<code>
-							vectorizer = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
-							</code>
-							<br><br>
-							Lets convert both our sentence into vector.<br>
-							<table>
-							    <thead>
-							      <tr>
-							        <th></th>
-							        <th>basic</th>
-							        <th>beauty</th>
-							        <th>embedding</th>
-							        <th>into</th>
-							        <th>is</th>
-							        <th>look</th>
-							        <th>most</th>
-							        <th>of</th>
-							        <th>take</th>
-							        <th>the</th>
-							        <th>vectorizer</th>
-							        <th>word</th>
-							      </tr>
-							    </thead>
-							    <tbody>
-							      <tr>
-							        <td>d1</td>
-							        <td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td>
-							        <td>0</td><td>1</td><td>1</td><td>2</td><td>0</td><td>1</td>
-							      </tr>
-							      <tr>
-							        <td>d1</td>
-							        <td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td>
-							        <td>1</td><td>0</td><td>0</td><td>2</td><td>1</td><td>2</td>
-							      </tr>
-							     </tbody>
-						  </table>
-						  <br>
-						  above is given vector representaion of documents d1 and d2
-						  <br><br>
-						  Here is the example code, to form count vector using sci-kit library<br>
-							<div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #008800; font-weight: bold">from</span> <span style="color: #0e84b5; font-weight: bold">sklearn.feature_extraction.text</span> <span style="color: #008800; font-weight: bold">import</span> CountVectorizer
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>text <span style="color: #333333">=</span> [<span style="background-color: #fff0f0">&quot;Take a look into the beauty of the word embedding.&quot;</span>,<span style="background-color: #fff0f0">&quot;The word vectorizer is the most basic word embedding&quot;</span>]
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>cv <span style="color: #333333">=</span> CountVectorizer()
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>cv<span style="color: #333333">.</span>fit(text)
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>text_vector <span style="color: #333333">=</span> cv<span style="color: #333333">.</span>transform(text)
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>text_vector<span style="color: #333333">.</span>toarray()
-<span style="color: #888888">array([[0, 1, 1, 1, 0, 1, 0, 1, 1, 2, 0, 1],</span>
-<span style="color: #888888">       [1, 0, 1, 0, 1, 0, 1, 0, 0, 2, 1, 2]])</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>cv<span style="color: #333333">.</span>vocabulary_
-<span style="color: #888888">{&#39;basic&#39;: 0,</span>
-<span style="color: #888888"> &#39;beauty&#39;: 1,</span>
-<span style="color: #888888"> &#39;embedding&#39;: 2,</span>
-<span style="color: #888888"> &#39;into&#39;: 3,</span>
-<span style="color: #888888"> &#39;is&#39;: 4,</span>
-<span style="color: #888888"> &#39;look&#39;: 5,</span>
-<span style="color: #888888"> &#39;most&#39;: 6,</span>
-<span style="color: #888888"> &#39;of&#39;: 7,</span>
-<span style="color: #888888"> &#39;take&#39;: 8,</span>
-<span style="color: #888888"> &#39;the&#39;: 9,</span>
-<span style="color: #888888"> &#39;vectorizer&#39;: 10,</span>
-<span style="color: #888888"> &#39;word&#39;: 11}</span>
-</pre></div>
-							<br><br>
-							<h3>1.2  TF-IDF Vector</h3>
-							It is another method which also based on the frequency of words in documents. But overcome some flaws of countvectorizer. It takes into account not only frequency of word in each document but also entire corpus.
-							<br><br>
-							Some words like 'the','a','is','that' appear more often then other words in every document. These word doesn't seem to change the sentiment of sentence. So we would like to weight down the words which occur quite often in most of the documents.
-							<br><br>
-							For documents,
-							<br>
-							d1 = "Take a look into the beauty of the word embedding."<br>
-							d2 = "The word vectorizer is the most basic word embedding"
-							<br><br>
-							Lets look what Tf-Idf does,
-							<br>
-							<code>
-								TF = ( Freq of word in a document ) / ( No of words in that documents )<br>
-								TF(take,d1) = 1/10 = 0.1<br>
-								TF(the,d2) = 1/9 = 0.11
-								<br><br>
-								IDF = log( No of docs /  No of docs term t has appeared ) #without smoothing<br>
-								where<br> 
-								IDF(the) = log(2/2) = 1<br>
-								IDF(take) = log(2/1) = 0.6931<br>
-								<br><br>
-								TF-IDF(take,d1) = tf*idf = 0.1*0.6931 = 0.0693
-							</code>
-							<br><br>
-							sci-kit learn library uses TF-IDF which by default takes smoothing factor into account so values might be different.
-							<br>
-							<div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #008800; font-weight: bold">from</span> <span style="color: #0e84b5; font-weight: bold">sklearn.feature_extraction.text</span> <span style="color: #008800; font-weight: bold">import</span> TfidfVectorizer
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>text <span style="color: #333333">=</span> [<span style="background-color: #fff0f0">&quot;Take a look into the beauty of the word embedding.&quot;</span>,<span style="background-color: #fff0f0">&quot;The word vectorizer is the most basic word embedding&quot;</span>]
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>tv <span style="color: #333333">=</span> TfidfVectorizer()
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>tv<span style="color: #333333">.</span>fit(text)
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>tfidf_vector <span style="color: #333333">=</span> tv<span style="color: #333333">.</span>transform(text)
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>tfidf_vector<span style="color: #333333">.</span>toarray()
-<span style="color: #888888">array([[ 0.        ,  0.35272845,  0.25096919,  0.35272845,  0.        ,</span>
-<span style="color: #888888">         0.35272845,  0.        ,  0.35272845,  0.35272845,  0.50193839,</span>
-<span style="color: #888888">         0.        ,  0.25096919],</span>
-<span style="color: #888888">       [ 0.34186894,  0.        ,  0.24324257,  0.        ,  0.34186894,</span>
-<span style="color: #888888">         0.        ,  0.34186894,  0.        ,  0.        ,  0.48648513,</span>
-<span style="color: #888888">         0.34186894,  0.48648513]])</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>tv<span style="color: #333333">.</span>idf_
-<span style="color: #888888">array([ 1.40546511,  1.40546511,  1.        ,  1.40546511,  1.40546511,</span>
-<span style="color: #888888">        1.40546511,  1.40546511,  1.40546511,  1.40546511,  1.        ,</span>
-<span style="color: #888888">        1.40546511,  1.        ])</span>
-</pre></div>
-<br>
-							<h3>Pros:</h3>
-							<ul>
-								<li>It is very easy and fast method to perform word embeddings.</li>
-							</ul>
-							<h3>Cons:</h3>
-							<ul>
-								<li>If the vocabulary is too large then the spase matrix created will be too large and will take a lot of memory. Also processing that huge matrix will be a burden.</li>
-							</ul>
-						</p>
-						<p>
+<div class="right-col-block blocks">
+<div class="theiaStickySidebar">
+<section class="section-wrapper section-interest gray-bg">
+    <div class="container-fluid">
+    	<div class="col-md-12">
+	    	<p>
+	    		In NLP application we have to work with texual data. 
+				Well we can't directly feed our textual data for training into our ML models, Deep Learning Models etc.
+				Let it be regression, classification or any NLP task, we need to convert our textual data into numerical form that can be feeded into models for futher processing.
+			</p>
+			<p>
+				Word Embedding converts textual data into numerical data of some form. In general, word embedding convert a word into some sort of vector representation.
+			</p>
+			<p>
+				Now, we will broadly classify word embedding in 2 types and then dive deep into their types
+				<br>
+				<ol>
+					<li>
+						<h3>Frequency based Embedding</h3>
+						<ul>
+							<li>Count Vector</li>
+							<li>Tf-Idf Vector</li>
+						</ul>
+					</li>
+					<li>
+						<h3>Prediction based Embedding</h3>
+						<ul>
+							<li>CBOW (Continous Bag of Words)</li>
+							<li>Skip-Gram</li>
+						</ul>
+					</li>
+				</ol>
+			</p>
+			<p>
+				<h2>1. Frequency based Embedding</h2>
+				These are the very basic, easy and fast method to word vectors. These work on the basis of count of word in each document. It can be Count Vector, Tf-Idf vector, or Co-Occurance vector. We will discuss here only Count vector and Tf-Idf vector.
+
+				<h3>1.1  Count Vector</h3>
+				Lets us understand this by looking into a simple example. Lets take two documents
+				<br><br>
+				d1 = "Take a look into the beauty of the word embedding."<br>
+				d2 = "The word vectorizer is the most basic word embedding"
+				<br><br>
+				There are 12 unique words, So here our word vector will be of size 12, which means each word can be denoted by a vector of size 12.
+				<br><br>
+				Lets, arrange all unique words in alphabetic order. That would be "basic, beauty, embedding, into, is, look, most, take, the, vectorizer, word".
+				<br><br>
+				Now lets prepare a dictionary where each word is mapped with index in vector.
+				<br>
+				<code>
+				{'basic': 0,'beauty': 1,'embedding': 2,'into': 3,'is': 4,'look': 5,'most': 6,'of': 7,'take': 8,'the': 9,'vectorizer': 10,'word': 11}
+				</code>
+				<br><br>
+				So, suppose we want to denote a word by vector.<br>
+				<code>
+				vectorizer = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+				</code>
+				<br><br>
+				Lets convert both our sentence into vector.<br>
+				<table>
+				    <thead>
+				      <tr>
+				        <th></th>
+				        <th>basic</th>
+				        <th>beauty</th>
+				        <th>embedding</th>
+				        <th>into</th>
+				        <th>is</th>
+				        <th>look</th>
+				        <th>most</th>
+				        <th>of</th>
+				        <th>take</th>
+				        <th>the</th>
+				        <th>vectorizer</th>
+				        <th>word</th>
+				      </tr>
+				    </thead>
+				    <tbody>
+				      <tr>
+				        <td>d1</td>
+				        <td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td>
+				        <td>0</td><td>1</td><td>1</td><td>2</td><td>0</td><td>1</td>
+				      </tr>
+				      <tr>
+				        <td>d1</td>
+				        <td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td>
+				        <td>1</td><td>0</td><td>0</td><td>2</td><td>1</td><td>2</td>
+				      </tr>
+				     </tbody>
+			  </table>
+			  <br>
+			  above is given vector representaion of documents d1 and d2
+			  <br>
+			  Here is the example code, to form count vector using sci-kit library<br>
+				<code>
+					>>> from sklearn.feature_extraction.text import CountVectorizer<br>
+					>>> text = ["Take a look into the beauty of the word embedding.","The word vectorizer is the most basic word embedding"]<br>
+					>>> cv = CountVectorizer()<br>
+					>>> cv.fit(text)<br>
+					>>> text_vector = cv.transform(text)<br>
+					>>> text_vector.toarray()<br>
+					array([[0, 1, 1, 1, 0, 1, 0, 1, 1, 2, 0, 1],<br>
+					       [1, 0, 1, 0, 1, 0, 1, 0, 0, 2, 1, 2]])<br>
+					>>> cv.vocabulary_<br>
+					{'basic': 0,<br>
+					 'beauty': 1,<br>
+					 'embedding': 2,<br>
+					 'into': 3,<br>
+					 'is': 4,<br>
+					 'look': 5,<br>
+					 'most': 6,<br>
+					 'of': 7,<br>
+					 'take': 8,<br>
+					 'the': 9,<br>
+					 'vectorizer': 10,<br>
+					 'word': 11}<br>
+				</code>
+				<br><br>
+				<h3>1.2  TF-IDF Vector</h3>
+				It is another method which also based on the frequency of words in documents. But overcome some flaws of countvectorizer. It takes into account not only frequency of word in each document but also entire corpus.
+				<br><br>
+				Some words like 'the','a','is','that' appear more often then other words in every document. These word doesn't seem to change the sentiment of sentence. So we would like to weight down the words which occur quite often in most of the documents.
+				<br><br>
+				For documents,
+				<br>
+				d1 = "Take a look into the beauty of the word embedding."<br>
+				d2 = "The word vectorizer is the most basic word embedding"
+				<br><br>
+				Lets look what Tf-Idf does,
+				<br>
+				<code>
+					TF = ( Freq of word in a document ) / ( No of words in that documents )<br>
+					TF(take,d1) = 1/10 = 0.1<br>
+					TF(the,d2) = 1/9 = 0.11
+					<br><br>
+					IDF = log( No of docs /  No of docs term t has appeared ) #without smoothing<br>
+					where<br> 
+					IDF(the) = log(2/2) = 1<br>
+					IDF(take) = log(2/1) = 0.6931<br>
+					<br><br>
+					TF-IDF(take,d1) = tf*idf = 0.1*0.6931 = 0.0693
+				</code>
+				<br><br>
+				sci-kit learn library uses TF-IDF which by default takes smoothing factor into account so values might be different.
+				<br>
+				<code>
+					>>> from sklearn.feature_extraction.text import CountVectorizer <br>
+					>>> text = ["Take a look into the beauty of the word embedding.","The word vectorizer is the most basic word embedding"] <br>
+					>>> cv = CountVectorizer()<br> 
+					>>> cv.fit(text) <br>
+					>>> text_vector = cv.transform(text)<br> 
+					>>> text_vector.toarray() array([[0, 1, 1, 1, 0, 1, 0, 1, 1, 2, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 0, 2, 1, 2]]) <br>
+					>>> cv.vocabulary_ {'basic': 0, 'beauty': 1, 'embedding': 2, 'into': 3, 'is': 4, 'look': 5, 'most': 6, 'of': 7, 'take': 8, 'the': 9, 'vectorizer': 10, 'word': 11}<br>
+				</code>
+				<br>
+				<h3>Pros:</h3>
+				<ul>
+					<li>It is very easy and fast method to perform word embeddings.</li>
+				</ul>
+				<h3>Cons:</h3>
+				<ul>
+					<li>If the vocabulary is too large then the spase matrix created will be too large and will take a lot of memory. Also processing that huge matrix will be a burden.</li>
+				</ul>
+			</p>
+			<p>
 							<h2>2. Prediction Based Vector</h2>
 							To overcome the limitations of previous methods of representation. Another method is introduced which with the help of 1-Hidden Layer Neural Network forms a N-dimensional representation of word called word vector.
 							<br><br>
@@ -295,146 +315,167 @@
 						</p>
 						<p>
 							Lets look at an example to build word vectors by using Gensim Library.
-							<div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #008800; font-weight: bold">import</span> <span style="color: #0e84b5; font-weight: bold">gensim.models.word2vec</span> <span style="color: #008800; font-weight: bold">as</span> <span style="color: #0e84b5; font-weight: bold">w2v</span>
-<span style="color: #008800; font-weight: bold">import</span> <span style="color: #0e84b5; font-weight: bold">numpy</span> <span style="color: #008800; font-weight: bold">as</span> <span style="color: #0e84b5; font-weight: bold">np</span>
-sentence_tokens <span style="color: #333333">=</span> np<span style="color: #333333">.</span>array([[<span style="background-color: #fff0f0">&quot;This&quot;</span>,<span style="background-color: #fff0f0">&quot;is&quot;</span>,<span style="background-color: #fff0f0">&quot;a&quot;</span>,<span style="background-color: #fff0f0">&quot;game&quot;</span>,<span style="background-color: #fff0f0">&quot;of&quot;</span>,<span style="background-color: #fff0f0">&quot;thrones&quot;</span>,<span style="background-color: #fff0f0">&quot;books&quot;</span>,<span style="background-color: #fff0f0">&quot;corpus&quot;</span>],
-			[<span style="background-color: #fff0f0">&quot;You&quot;</span>,<span style="background-color: #fff0f0">&quot;can&quot;</span>,<span style="background-color: #fff0f0">&quot;select&quot;</span>,<span style="background-color: #fff0f0">&quot;any&quot;</span>,<span style="background-color: #fff0f0">&quot;corpus&quot;</span>],
-			[<span style="background-color: #fff0f0">&quot;You&quot;</span>,<span style="background-color: #fff0f0">&quot;must&quot;</span>,<span style="background-color: #fff0f0">&quot;convert&quot;</span>,<span style="background-color: #fff0f0">&quot;corpus&quot;</span>,<span style="background-color: #fff0f0">&quot;in&quot;</span>,<span style="background-color: #fff0f0">&quot;this&quot;</span>,<span style="background-color: #fff0f0">&quot;form&quot;</span>]])
+							<code>
+								<br>
+								import gensim.models.word2vec as w2v<br>
+								import numpy as np<br>
+								sentence_tokens = np.array([["This","is","a","game","of","thrones","books","corpus"],<br>
+											["You","can","select","any","corpus"],<br>
+											["You","must","convert","corpus","in","this","form"]])<br>
 
-embedding_size <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">300</span> <span style="color: #888888">#size of embedding</span>
-min_word_count <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">3</span> <span style="color: #888888">#word must appear atleast 3 times</span>
-num_workers <span style="color: #333333">=</span> multiprocessing<span style="color: #333333">.</span>cpu_count() <span style="color: #888888">#using multiple processors</span>
-context_size<span style="color: #333333">=</span><span style="color: #0000DD; font-weight: bold">7</span> <span style="color: #888888">#looking at 7 words at a time</span>
-downsampling <span style="color: #333333">=</span> <span style="color: #0000DD; font-weight: bold">1</span>e<span style="color: #333333">-</span><span style="color: #0000DD; font-weight: bold">3</span> <span style="color: #888888">#Downsample setting for frequent words</span>
-
-thrones2vec <span style="color: #333333">=</span> w2v<span style="color: #333333">.</span>Word2Vec(
-    sg<span style="color: #333333">=</span><span style="color: #0000DD; font-weight: bold">1</span>, <span style="color: #888888">#1 skip-gram 0- CBOW</span>
-    seed<span style="color: #333333">=</span>seed,
-    workers<span style="color: #333333">=</span> num_workers,
-    size <span style="color: #333333">=</span> num_features,
-    min_count <span style="color: #333333">=</span> min_word_count,
-    window <span style="color: #333333">=</span> context_size,
-    sample <span style="color: #333333">=</span> downsampling
-)
-
-thrones2vec<span style="color: #333333">.</span>build_vocab(sentence_tokens)
-<span style="color: #888888">#start training, this might take time</span>
-thrones2vec<span style="color: #333333">.</span>train(sentence_tokens,
-                  total_examples<span style="color: #333333">=</span><span style="color: #007020">len</span>(sentence_tokens),
-                  epochs<span style="color: #333333">=</span><span style="color: #0000DD; font-weight: bold">25</span>
-)
-thrones2vec<span style="color: #333333">.</span>save(<span style="background-color: #fff0f0">&quot;thrones2vec.w2v&quot;</span>) <span style="color: #888888">#to save word2vec model</span>
-thrones2vec <span style="color: #333333">=</span> w2v<span style="color: #333333">.</span>Word2Vec<span style="color: #333333">.</span>load(<span style="background-color: #fff0f0">&quot;thrones2vec.w2v&quot;</span>) <span style="color: #888888">#to load word2vec model</span>
-</pre></div>
+								embedding_size = 300 #size of embedding<br>
+								min_word_count = 3 #word must appear atleast 3 times<br>
+								num_workers = multiprocessing.cpu_count() #using multiple processors<br>
+								context_size=7 #looking at 7 words at a time<br>
+								downsampling = 1e-3 #Downsample setting for frequent words<br>
+								<br>
+								thrones2vec = w2v.Word2Vec(<br>
+								    sg=1, #1 skip-gram 0- CBOW<br>
+								    seed=seed,<br>
+								    workers= num_workers,<br>
+								    size = num_features,<br>
+								    min_count = min_word_count,<br>
+								    window = context_size,<br>
+								    sample = downsampling<br>
+								)<br>
+								<br>
+								thrones2vec.build_vocab(sentence_tokens)<br>
+								#start training, this might take time<br>
+								thrones2vec.train(sentence_tokens,<br>
+								                  total_examples=len(sentence_tokens),<br>
+								                  epochs=25<br>
+								)<br>
+								thrones2vec.save("thrones2vec.w2v") #to save word2vec model<br>
+								thrones2vec = w2v.Word2Vec.load("thrones2vec.w2v") #to load word2vec model<br>
+							</code>
 							<br><br>
 							Lets look at some applications of word2vec.
 							<br>
-							<div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>vectors <span style="color: #888888">#gives V*N dimensional matrix</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>vocab <span style="color: #888888">#gives list of words of size V</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>most_similar(<span style="background-color: #fff0f0">&quot;stark&quot;</span>)
-<span style="color: #888888">[(&#39;eddard&#39;, 0.6009404063224792),</span>
-<span style="color: #888888"> (&#39;snowbeard&#39;, 0.4654235243797302),</span>
-<span style="color: #888888"> (&#39;accommodating&#39;, 0.46405118703842163),</span>
-<span style="color: #888888"> (&#39;divulge&#39;, 0.4528692960739136),</span>
-<span style="color: #888888"> (&#39;edrick&#39;, 0.43332362174987793),</span>
-<span style="color: #888888"> (&#39;interred&#39;, 0.4253771901130676),</span>
-<span style="color: #888888"> (&#39;executed&#39;, 0.42412883043289185),</span>
-<span style="color: #888888"> (&#39;winterfell&#39;, 0.4224868416786194),</span>
-<span style="color: #888888"> (&#39;shirei&#39;, 0.4207403063774109),</span>
-<span style="color: #888888"> (&#39;absently&#39;, 0.419999361038208)]</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #888888">#Finding the degree of similarity between two words.</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>similarity(<span style="background-color: #fff0f0">&#39;woman&#39;</span>,<span style="background-color: #fff0f0">&#39;man&#39;</span>)
-<span style="color: #888888">0.73723527</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #888888">#Finding odd one out.</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>doesnt_match(<span style="background-color: #fff0f0">&#39;breakfast cereal dinner lunch&#39;</span>;<span style="color: #333333">.</span>split())
-<span style="color: #888888">&#39;cereal&#39;</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #888888">#Amazing things like woman+king-man =queen</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>most_similar(positive<span style="color: #333333">=</span>[<span style="background-color: #fff0f0">&#39;woman&#39;</span>,<span style="background-color: #fff0f0">&#39;king&#39;</span>],negative<span style="color: #333333">=</span>[<span style="background-color: #fff0f0">&#39;man&#39;</span>],topn<span style="color: #333333">=</span><span style="color: #0000DD; font-weight: bold">1</span>)
-<span style="color: #888888">queen: 0.508</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #888888">#Probability of a text under the model</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>thrones2vec<span style="color: #333333">.</span>wv<span style="color: #333333">.</span>score([<span style="background-color: #fff0f0">&#39;The fox jumped over the lazy dog&#39;</span><span style="color: #333333">.</span>split()])
-<span style="color: #888888">0.21</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span><span style="color: #008800; font-weight: bold">def</span> <span style="color: #0066BB; font-weight: bold">nearest_similarity_cosmul</span>(start1, end1, end2):
-<span style="color: #888888">.........similarities = thrones2vec.wv.most_similar_cosmul(</span>
-<span style="color: #888888">.........positive=[end2, start1],</span>
-<span style="color: #888888">.........negative=[end1])</span>
-<span style="color: #888888">.........start2 = similarities[0][0]</span>
-<span style="color: #888888">.........print(&quot;{start1} is related to {end1}, as {start2} is related to {end2}&quot;.format(**locals()))</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>nearest_similarity_cosmul(<span style="background-color: #fff0f0">&quot;stark&quot;</span>, <span style="background-color: #fff0f0">&quot;winterfell&quot;</span>, <span style="background-color: #fff0f0">&quot;riverrun&quot;</span>)
-<span style="color: #888888">&#39;stark is related to winterfell, as tully is related to riverrun&#39;</span>
-<span style="color: #c65d09; font-weight: bold">&gt;&gt;&gt; </span>nearest_similarity_cosmul(<span style="background-color: #fff0f0">&quot;arya&quot;</span>, <span style="background-color: #fff0f0">&quot;nymeria&quot;</span>, <span style="background-color: #fff0f0">&quot;drogon&quot;</span>)
-<span style="color: #888888">&#39;arya is related to nymeria, as dany is related to drogon&#39;</span>
-</pre></div>
-
+							<code>
+								>>> thrones2vec.wv.vectors #gives V*N dimensional matrix<br>
+								>>> thrones2vec.wv.vocab #gives list of words of size V<br>
+								>>> thrones2vec.wv.most_similar("stark")<br>
+								[('eddard', 0.6009404063224792),<br>
+								 ('snowbeard', 0.4654235243797302),<br>
+								 ('accommodating', 0.46405118703842163),<br>
+								 ('divulge', 0.4528692960739136),<br>
+								 ('edrick', 0.43332362174987793),<br>
+								 ('interred', 0.4253771901130676),<br>
+								 ('executed', 0.42412883043289185),<br>
+								 ('winterfell', 0.4224868416786194),<br>
+								 ('shirei', 0.4207403063774109),<br>
+								 ('absently', 0.419999361038208)]<br>
+								>>> #Finding the degree of similarity between two words.<br>
+								>>> thrones2vec.wv.similarity('woman','man')<br>
+								0.73723527<br>
+								>>> #Finding odd one out.<br>
+								>>> thrones2vec.wv.doesnt_match('breakfast cereal dinner lunch';.split())<br>
+								'cereal'<br>
+								>>> #Amazing things like woman+king-man =queen<br>
+								>>> thrones2vec.wv.most_similar(positive=['woman','king'],negative=['man'],topn=1)<br>
+								queen: 0.508<br>
+								>>> #Probability of a text under the model<br>
+								>>> thrones2vec.wv.score(['The fox jumped over the lazy dog'.split()])<br>
+								0.21<br>
+								>>> def nearest_similarity_cosmul(start1, end1, end2):<br>
+								.........similarities = thrones2vec.wv.most_similar_cosmul(<br>
+								.........positive=[end2, start1],<br>
+								.........negative=[end1])<br>
+								.........start2 = similarities[0][0]<br>
+								.........print("{start1} is related to {end1}, as {start2} is related to {end2}".format(**locals()))<br>
+								>>> nearest_similarity_cosmul("stark", "winterfell", "riverrun")<br>
+								'stark is related to winterfell, as tully is related to riverrun'<br>
+								>>> nearest_similarity_cosmul("arya", "nymeria", "drogon")<br>
+								'arya is related to nymeria, as dany is related to drogon'<br>
+							</code>
 						</p>
 						<h2>More Resources</h2>
 						<ol>
 							<li><a href="https://www.analyticsvidhya.com/blog/2017/06/word-embeddings-count-word2veec/" target="_blank">Word Embedding tutorials by Analytics Vidhya</a></li>
 							<li><a href="https://towardsdatascience.com/word2vec-skip-gram-model-part-1-intuition-78614e4d6e0b" target="_blank">Skip Gram in detail by Towards Data Science</a></li>
 						</ol>
-					</div>
-		    	</div>
-		    	<div class="col-md-8" id="disqus_thread"></div>
-		    </div>
 		</div>
+		<div id="disqus_thread"></div>			
     </div>
-
-    <div id="contact">
-        <h2>Get in Touch</h2>
-        <div id="contact-form">
-            <form method="POST" action="https://formspree.io/adityajn105@gmail.com">
-                <input type="hidden" name="_subject" value="Contact request from personal website" />
-                <input type="email" name="_replyto" placeholder="Your email" required>
-                <textarea name="message" placeholder="Your message" required></textarea>
-                <button type="submit">Send</button>
-            </form>
-        </div>
-        <!-- End #contact-form -->
-    </div>
-    <!-- End #contact -->
-
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-5 copyright">
-                    <p>
-                        Copyright &copy; 2018 Aditya Jain
-                    </p>
-                </div>
-                <div class="col-sm-2 top">
-                    <span id="to-top">
-                        <i class="fa fa-chevron-up" aria-hidden="true"></i>
-                    </span>
-                </div>
-                <div class="col-sm-5 social">
-                    <ul>
-                        <li>
-                            <a href="https://github.com/adityajn105" target="_blank"><i class="fa fa-github" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://stackoverflow.com/story/adityajn105" target="_blank"><i class="fa fa-stack-overflow" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://linkedin.com/in/adityajn105" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://www.facebook.com/adityajn105" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://twitter.com/adityajn105" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a>
-                        </li>
-                        <li>
-                            <a href="https://plus.google.com/u/0/109175370680223240708" target="_blank"><i class="fa fa-google-plus" aria-hidden="true"></i></a>
-                        </li>
-                    </ul>
+</section>
+<section class="section-contact section-wrapper gray-bg">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="section-title">
+                    <h2>Contact</h2>
                 </div>
             </div>
         </div>
-    </footer>
-    <!-- End footer -->
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="/js/scripts.min.js"></script>
-    <script id="dsq-count-scr" src="//adityajn105.disqus.com/count.js" async></script>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="feedback-form">
+                    <h2>Get in touch</h2>
+
+                    <form id="contactForm" action="https://formspree.io/adityajn105@gmail.com" method="POST" target='_blank'>
+                        <div class="form-group">
+                            <input type="hidden" name="_subject" value="Contact request from personal website" 
+                            class="form-control" id="InputSubject">
+                        </div>
+                        <div class="form-group">
+                            <label for="InputEmail">Email address</label>
+                            <input type="email" name="_replyto" required="" class="form-control" id="InputEmail"
+                                   placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">Message</label>
+                            <textarea class="form-control" rows="4" required="" name="message" id="message-text"
+                                      placeholder="Write message"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--.container-fluid-->
+</section>
+
+<footer class="footer">
+    <div class="copyright-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="copytext">&copy; Resumex. All rights reserved | Design By: <a
+                            href="https://themehippo.com">themehippo</a></div>
+                </div>
+            </div>
+            <!--.row-->
+        </div>
+        <!-- .container-fluid -->
+    </div>
+    <!-- .copyright-section -->
+</footer>
+<!-- .footer -->
+</div>
+<!-- Sticky -->
+</div>
+<!-- .right-col-block -->
+</div>
+<!-- .columns-block -->
+</div>
+<!-- #main-wrapper -->
+
+<!-- jquery -->
+<script src="../js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript">
+	$("#link").click(function() {
+  $('html, body').animate({
+    scrollTop: $("#disqus_thread").offset().top
+  }, 1000);
+});
+</script>
+
+<!-- Bootstrap -->
+<script src="../js/bootstrap.min.js"></script>
+<script src="../js/theia-sticky-sidebar.js"></script>
+<script src="../js/scripts.js"></script>
 </body>
 </html>
