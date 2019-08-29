@@ -68,9 +68,8 @@
             <h3>Contents</h3>
             <ul>
                  <li>Introduction</li>
-                 <li><b>Image Captioning</b></li>
                  <li><b>Model Architecture</b></li>
-                 <li><b>Building our own bot</b></li>
+                 <li><b>Building Image Caption Generator</b></li>
                  <li>Beam Search</li>
                  <li>BLEU Score</li>
             </ul>
@@ -101,72 +100,38 @@
                 		<h2>Introduction</h2>
 			    		Automatically describing the content of an image is a common problem in Artificial Intellligence that connects computer vision and natural language processing. Here we will learn about a generative model based on deep recurrent architecture that combines the recent advancements in computer vision and natural language processing. The model in the end will be able to generate the target description sentence when inputs the image. We will also discuss beam search strategy to get the best caption out of many caption. Also we will learn about BLEU score which is common metric for machine translation tasks.
 			    		<br><br>
-			    		
+			    		Here, I will be discussing 'merge' architecture to generate Image Captions which is different from the tradtional views of Image Captioning where image features are 'injected' in the RNN. Please read the following two papers to get understanding of 'injected' architecture.
 			    		<br><br>
-			    		The material presented here is taken from the Deep Learning Specialization Course by Andrew Ng for the sake of explanation.
+			    		<a href="https://arxiv.org/pdf/1411.4555.pdf">Vinyals, Oriol, et al. Show and tell: A neural image caption generator. CVPR, 2015.</a>
+			    		<br>
+			    		<a href="http://proceedings.mlr.press/v37/xuc15.pdf">Xu, Kelvin, et al. Show, attend and tell: Neural image caption generation with visual attention. ICML, 2015.</a>
 			    		<br><br>
-			    		<h2>Attention Model</h2>
+			    		The idea of 'merge' architecture is taken from the following paper. This is an architecture which is different from the dominant view in the literature. Here, the RNN is viewed as only encoding the previously generated words. This view suggests that the RNN should only be used to encode linguistic features and that only the final representation should be ‘merged’ with the image features at a later stage. Here I it is called 'merge' architecture.
+			    		<br><br>
+			    		<a href="https://arxiv.org/pdf/1708.02043.pdf">What is the Role of Recurrent Neural Networks (RNNs) in an Image Caption Generator?</a>
+			    		<br><br>
+			    		<h2>Model Architecuture</h2>
 			            The diagram below shows the whole attention model in one view.
 			            <br>
-			            <div class="col-md-12"><img src="images/attn_model.png" class="col-md-push-2 col-md-8"></div>
-			            <br><br><br>
-			            There are two seperate LSTMs in this model. The one in the bottom is the Bi-Direction LSTM and comes into play before the attention mechanism, let's call it pre-attention Bi-LSTM. The LSTM on the top comes after the attention mechanism and let's call it post-attention LSTM. The pre-attention Bi-LSTM goes through $T_x$ time steps; the post-attention LSTM goes through $T_y$ time steps.
+			            <div class="col-md-12"><img src="https://github.com/adityajn105/image-caption-bot/raw/master/architecture.png" class="col-md-push-2 col-md-8"></div>
+			            <br>
+			            This architecture keeps the encoding of linguistic and perceptual features separate, merging them in a later multimodal layer, at which point predictions are made. In this type of model, the RNN is functioning primarily as an encoder of sequences of word embeddings, with the visual features merged with the linguistic features in a later, multimodal layer. This multimodal layer is the one that drives the generation process since the RNN never sees the image and hence would not be able to direct the generation process.
 			            <br><br>
-			            The post-attention LSTM passes $s^{\langle t \rangle}, c^{\langle t \rangle}$ from one time step to the next. LSTM has both the output activation $s^{\langle t\rangle}$ and the hidden cell state $c^{\langle t\rangle}$. In this model the post-activation LSTM at time $t$ does will not take the specific generated $y^{\langle t-1 \rangle}$ as input; it only takes $s^{\langle t\rangle}$ and $c^{\langle t\rangle}$ as input because here we will build model for date generation, because (unlike language generation where adjacent characters are highly correlated) there isn't as strong a dependency between the previous character and the next character in a YYYY-MM-DD date.
+						In this model, RNN is only used as language model. RNN is feeded the word embeddings of partial caption starting from special token 'seq_start', the RNN then generate encoded representation of partial sequence. While CNN which is generally pretrained for image classification task like imagenet is feeded the image, which gives a image representation of that image. We can use VGG, Inception or resnet as pretrained CNN. These two representation i.e. language feature and image feature are appended together and feeded into another Feed Forward neural network. This Feed Forward Neural Network will output a vector of size equal to size of vocabulary. Index of highest value in that vector represents the next word of caption which is combined with the partial caption and again process continues untill we get the 'seq_end' token from FNN.
 			            <br><br>
-			            We use $a^{\langle t \rangle} = [\overrightarrow{a}^{\langle t \rangle}; \overleftarrow{a}^{\langle t \rangle}]$ to represent the concatenation of the activations of both the forward-direction and backward-directions of the pre-attention Bi-LSTM. 
-
+			            <h2>Building Image Caption Generator</h2>
+			            Firstly, get a dataset which has image and its corresponding captions. There are many such dataset available online. Some famous ones are flickr8k, flickr30k or Microsoft COCO dataset. We will use flickr8k dataset which is easily available online. It has 8k images with 5 captions for each image.
 			            <br><br>
-			            <h2>Attention Mechanism</h2>
-			            The diagram below shows what one "Attention" step does to calculate the attention variables $\alpha^{\langle t, t' \rangle}$, which are used to compute the context variable $context^{\langle t \rangle}$ for each timestep in the output ($t=1, \ldots, T_y$).
-			            <br><br>
-			            <div class="col-md-12"><img src="images/attn_mechanism.png" class="col-md-push-2 col-md-8"></div> 
-			           	<br>
-			           	The diagram above uses a RepeatVector node to copy $s^{\langle t-1 \rangle}$'s value $T_x$ times, and then Concatenation to concatenate $s^{\langle t-1 \rangle}$ and $a^{\langle t \rangle}$ to compute $e^{\langle t, t'}$, which is then passed through a softmax to compute $\alpha^{\langle t, t' \rangle}$.
-			           	<br><br>
-			           	At step $t$, given all the hidden states of the Bi-LSTM ($[a^{&lt;1&gt;},a^{&lt;2&gt;}, ..., a^{&lt;T_x&gt;}]$) and the previous hidden state of the second LSTM ($s^{&lt;t-1&gt;}$). One step of attention will compute the attention weights ( $[\alpha^{&lt;t,1&gt;}, \alpha^{&lt;t,2&gt;}, ..., \alpha^{&lt;t,T_x&gt;}]$ ) and output the context vector as
-			           	$$ context^{\lt t \gt} = \sum_{t'=1}^{T_x} \alpha^{ \lt t,t' \gt } \alpha^{t'}   $$
-			           	The (post-attention) LSTM's internal memory cell variable is denoted by $c^{\langle t \rangle}$ not to be confused with $context^{\lt t \gt}$.
-			           	<br><br>
-			           	<h2>Building a Date Translater</h2>
-			           	We will build a Neural Machine Translation (NMT) model to translate human readable dates ("10th of May, 1996") into machine readable dates ("1996-05-10") which I got inspiration from Deep Learning Course of Coursera by Andrew Ng. The model you will build here could be used to translate from one language to another, such as translating from English to Hindi. However, language translation requires massive datasets and usually takes days of training on GPUs.
-			           	<br><br>
-			           	Here I will talk about building attention model. Faker library is used to generate human readable and machine readable dates dataset, you can refer <a href="https://github.com/adityajn105/Attention-Based-Machine-Translation-Demo/blob/master/Attention_Based_Machine_Translation.ipynb">Github Code</a> to implement that.
-			           	<br><br>
-			           	Firstly we will implement a one_step_attention() method. Let's say we have hidden states of Bi-LSTM as ($[a^{&lt;1&gt;},a^{&lt;2&gt;}, ..., a^{&lt;T_x&gt;}]$) and previous hidden state of the second LSTM ($s^{&lt;t-1&gt;}$). We will compute $context^{\lt t \gt}$ as follows:
-		           		<script src="https://gitlab.com/snippets/1865271.js" type="text/javascript"></script>
-		           		Now let's implement model, we will have three input first one is input data, second and third is initial cell state and initial cell memory of post-attention LSTM respectively since the first LSTM cell will not have any inpu in starting. We will use Bi-Directional wrapper around LSTM which will concat two hidden activation of LSTM cell as $a^{\langle t \rangle} = [\overrightarrow{a}^{\langle t \rangle}; \overleftarrow{a}^{\langle t \rangle}]$.
-		           		<br><br>
-		           		We have to make out post-attention LSTM cell which make its return_state as True. The post attention LSTM cell will return state and memory where its state is used to calculate context using one_step_attention which will be input for next post-attention LSTM cell. Output is generated by applyting dense with softmax activation on LSTM's hidden state output.
-		           		<br><br>
-		           		Now, we are ready to define out model.
-		           		<script src="https://gitlab.com/snippets/1865273.js" type="text/javascript"></script>
-		           		Now its time to train oue model. We will initialize initial cell state and memory as array of zeros. We are using Adam Optimizer which some hyperparameter which turn out to be working best. 
-		           		<br><br>
-		           		Since output is 10 dimensional. So we need to change the shape of out training data output. Finally we are ready to start training.  
-		           		<script src="https://gitlab.com/snippets/1865278.js" type="text/javascript"></script>
-		         		Some examples translated by our model:
-		         		<br><br>
-		         		3 May 1979 -> 1979-05-03<br>
-						5 April 09 -> 2019-05-00<br>
-						21th of August 2016 -> 2016-08-21<br>
-						Tue 10 Jul 2007 -> 2007-07-10<br>
-						Saturday May 9 2018 -> 2018-05-09<br>
-						March 3 2001 -> 2001-03-03<br>
-						March 3rd 2001 -> 2001-03-03<br>
-						1 March 2001 -> 2001-03-01<br>
-						jun 10 2017 -> 2017-06-10
-
-		         		<br><br>
-		         		So we are ready with our own date translation application using one of the "state of the art" technique. I think you are ready to build your own machine translation application. Feel free to mention its link in the comments.
+									            
 		         		<br>
-		         		<h3>Here is <a href="https://github.com/adityajn105/Attention-Based-Machine-Translation-Demo/blob/master/Attention_Based_Machine_Translation.ipynb">Github Link</a> for full Code</h3>
+		         		<h3>Here is <a href="https://github.com/adityajn105/image-caption-bot/blob/master/Image-Captioning-Bot.ipynb">Github Link</a> for full Code</h3>
 		         		<br>
 						<h2>More Resources</h2>
 			            <ol>
-			                <li><a href="https://machinelearningmastery.com/introduction-neural-machine-translation/" target="_blank">Introduction to neural machine translation.</a></li>
-			                <li><a href="https://www.analyticsvidhya.com/blog/2019/01/neural-machine-translation-keras/" target="_blank">Buiding a German to English language translater.</a></li>
-			                <li><a href="https://google.github.io/seq2seq/nmt/" target="_blank">Neural Machine Translation Background</a></li>
+			            	<li><a href="https://arxiv.org/pdf/1708.02043.pdf">What is the Role of Recurrent Neural Networks (RNNs) in an Image Caption Generator?</a>
+			                <li><a href="https://arxiv.org/pdf/1411.4555.pdf" target="_blank">Vinyals, Oriol, et al. Show and tell: A neural image caption generator. CVPR, 2015.</a></li>
+			                <li><a href="http://proceedings.mlr.press/v37/xuc15.pdf" target="_blank">Xu, Kelvin, et al. Show, attend and tell: Neural image caption generation with visual attention. ICML, 2015.</a></li>
+			                <li><a href="https://machinelearningmastery.com/calculate-bleu-score-for-text-python/" target="_blank">A tutorial on calculating BLEU Score.</a></li>
 			            </ol>
         </div>
         <script>
