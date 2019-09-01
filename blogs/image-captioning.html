@@ -122,8 +122,20 @@
 			            <h2>Building Image Caption Generator</h2>
 			            Firstly, get a dataset which has image and its corresponding captions. There are many such dataset available online. Some famous ones are flickr8k, flickr30k or Microsoft COCO dataset. We will use flickr8k dataset which is easily available online. It has 8k images with 5 captions for each image.
 			            <br><br>
-									            
-		         		<br>
+						Now, preprocess these captions like remove non alphabet characters, make everything in lower case, remove dangling characters. After that append sequence start and sequence end word at the begining of caption and at the end. We will use 	&lt;S&gt; as seq start and &lt;/S&gt; as seq end. Now form a dictionary out of all words present in all captions combined which will point out some index. Similary create a reverse dictionary which point word from index. Decide a max length of a sequence which ideally should be equal to number of words in biggest caption.
+						<br><br>
+						Now we will build the training dataset. Select a caption, split it, take its first word and pre pad it to length of max sequence length this will be your x and its corresponding target will be second word. Repeat this for max seq length or length of caption, include next word in x and  next word as target. Repeat this for all captions. Also remember the corresponding image of that caption.
+						<br><br>
+						Example: Caption: &lt;S&gt; red car on road. &lt;/S&gt;<br>
+						Say max seq length is 5<br>
+						x: [0,0,0,0,&lt;S&gt;] y: red<br>
+						x: [0,0,0,&lt;S&gt;,red] y: car<br>
+						x: [0,0,&lt;S&gt;,red,car] y: on<br>
+						x: [0,&lt;S&gt;,red,car,on] y: road<br>
+						x: [&lt;S&gt;,red,car,on,road] y: &lt;/S&gt;
+						<br><br>
+						We will convert our target y to one hot encoded representation and x to seq with words denoted by their index. Now use any pretrained CNN used for image classification task such as imagenet and take out image feature from the last dense layer. Here for example we have used VGG19 and taken out 4096 length image feature from last dense layer. Create a model which take seq as input and use embedding layer to get a embedding of that sequence, we can use pretrained embedding like glove also. Now append this embedding of seq and image feature. And pass it though a feed forward neural network whose last layer is of size of VOCAB. This last layer denotes the probability of each word. Take out the word with highest probability and this will be the next word of seq.
+		         		<br><br>
 		         		<h3>Here is <a href="https://github.com/adityajn105/image-caption-bot/blob/master/Image-Captioning-Bot.ipynb">Github Link</a> for full Code</h3>
 		         		<br>
 						<h2>More Resources</h2>
