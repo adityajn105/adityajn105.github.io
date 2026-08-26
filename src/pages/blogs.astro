@@ -1,0 +1,291 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { viewsFor, formatViews } from '../data/views';
+
+// Full archive, ordered most-viewed first (view counts come from GA4 at build
+// time — see src/data/views.ts). Newest-first tiebreak, and posts with no view
+// data yet fall back to newest-first too.
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort((a, b) => {
+  const byViews = viewsFor(b.id) - viewsFor(a.id);
+  if (byViews !== 0) return byViews;
+  return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+});
+
+// Every distinct topic, for the filter bar.
+const allTags = [...new Set(posts.flatMap((p) => p.data.tags))].sort((a, b) =>
+  a.localeCompare(b)
+);
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<BaseLayout
+  title="Blog — Aditya Jain"
+  description="All posts by Aditya Jain on deep learning, reinforcement learning, NLP, and computer vision."
+>
+  <section class="section">
+    <div class="container blog-index">
+      <a href="/#blog" class="post-back">
+        <Icon name="arrow" size={15} class="flip" /> Home
+      </a>
+      <p class="eyebrow">Writing</p>
+      <h1 class="section-title">All posts</h1>
+
+      <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter posts by topic">
+        <button class="filter-chip is-active" type="button" data-filter="">All</button>
+        {
+          allTags.map((t) => (
+            <button class="filter-chip" type="button" data-filter={t}>
+              {t}
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="post-list">
+        {
+          posts.map((post) => (
+            <div class="post-row" data-tags={post.data.tags.join('||')}>
+              <div class="post-main">
+                <h3>
+                  <a class="post-link" href={`/blogs/${post.id}.html`}>{post.data.title}</a>
+                </h3>
+                <p>{post.data.description}</p>
+                {post.data.tags.length > 0 && (
+                  <ul class="post-tags">
+                    {post.data.tags.map((t) => (
+                      <li>
+                        <a
+                          class="post-tag"
+                          href={`/blogs.html?tag=${encodeURIComponent(t)}`}
+                          data-tag-link
+                          data-tag={t}
+                        >
+                          {t}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div class="post-meta">
+                {viewsFor(post.id) > 0 && (
+                  <span class="post-views">{formatViews(viewsFor(post.id))} views</span>
+                )}
+                <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
+                <Icon name="arrow" size={16} class="post-arrow" />
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="filter-empty" id="filter-empty" hidden>No posts match this topic.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const bar = document.getElementById('filter-bar');
+  const chips = bar ? Array.from(bar.querySelectorAll<HTMLElement>('[data-filter]')) : [];
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('.post-row'));
+  const empty = document.getElementById('filter-empty');
+
+  const currentTag = () => new URLSearchParams(location.search).get('tag') || '';
+
+  const apply = (tag: string, push: boolean) => {
+    let shown = 0;
+    for (const row of rows) {
+      const tags = (row.getAttribute('data-tags') || '').split('||');
+      const match = !tag || tags.includes(tag);
+      row.hidden = !match;
+      if (match) shown++;
+    }
+    for (const chip of chips) {
+      chip.classList.toggle('is-active', (chip.getAttribute('data-filter') || '') === tag);
+    }
+    if (empty) empty.hidden = shown !== 0;
+
+    if (push) {
+      const url = new URL(location.href);
+      if (tag) url.searchParams.set('tag', tag);
+      else url.searchParams.delete('tag');
+      history.pushState({ tag }, '', url.pathname + url.search);
+    }
+  };
+
+  // Filter-bar chips
+  for (const chip of chips) {
+    chip.addEventListener('click', () => apply(chip.getAttribute('data-filter') || '', true));
+  }
+  // Tag links inside tiles: filter in place instead of reloading
+  document.querySelectorAll<HTMLElement>('[data-tag-link]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      apply(a.getAttribute('data-tag') || '', true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+  // Back/forward navigation
+  window.addEventListener('popstate', () => apply(currentTag(), false));
+
+  // Apply whatever filter the URL arrived with (e.g. from a homepage tag click).
+  apply(currentTag(), false);
+</script>
+
+<style>
+  .blog-index {
+    max-width: 60rem;
+  }
+  .post-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+  }
+  .post-back:hover {
+    color: var(--accent);
+  }
+  .post-back :global(.flip) {
+    transform: rotate(180deg);
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .filter-chip {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .filter-chip:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .filter-chip.is-active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+
+  .post-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .post-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.4rem 0;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+  }
+  .post-row[hidden] {
+    display: none;
+  }
+  .post-row:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+  .post-main h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.3rem;
+    transition: color 0.15s var(--ease);
+  }
+  /* Stretched title link: covers the whole row so any non-interactive area
+     opens the post, while tag links stay clickable above it. */
+  .post-link {
+    color: inherit;
+  }
+  .post-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .post-row:hover .post-main h3 {
+    color: var(--accent);
+  }
+  .post-main p {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    max-width: 65ch;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin-top: 0.7rem;
+  }
+  .post-tag {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.01em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .post-tag:hover {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  .post-views {
+    white-space: nowrap;
+  }
+  .post-views::after {
+    content: '·';
+    margin-left: 0.9rem;
+    color: var(--text-faint);
+  }
+  .post-arrow {
+    transition: transform 0.2s var(--ease);
+  }
+  .post-row:hover .post-arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+  .filter-empty {
+    color: var(--text-muted);
+    padding: 1.5rem 0;
+  }
+
+  @media (max-width: 620px) {
+    .post-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+  }
+</style>

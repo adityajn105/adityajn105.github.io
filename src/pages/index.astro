@@ -1,0 +1,682 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { profile } from '../data/profile';
+import { projects, allProjectsUrl } from '../data/projects';
+import { skillGroups } from '../data/skills';
+import { experience, education } from '../data/experience';
+import { viewsFor, formatViews } from '../data/views';
+
+// Homepage highlights the 5 most recent posts. The full archive lives at
+// /blogs.html (ordered most-viewed first).
+const recentPosts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 5);
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<BaseLayout
+  title="Aditya Jain — ML / AI Engineer"
+  description="Aditya Jain is a machine learning and AI engineer (MTS @ Salesforce, MSCS @ USC). Explore projects, blogs on deep learning and reinforcement learning, and more."
+>
+  <!-- ============================ HERO / ABOUT ============================ -->
+  <section class="hero section" id="about">
+    <div class="container hero-grid">
+      <div class="hero-text">
+        <p class="eyebrow" data-reveal>{profile.tagline}</p>
+        <h1 class="hero-title" data-reveal>
+          Hi, I'm {profile.name}.<br />
+          I build <span class="accent">machine&nbsp;learning</span> that ships.
+        </h1>
+        {profile.bio.map((p) => <p class="hero-bio" data-reveal>{p}</p>)}
+        <div class="hero-cta" data-reveal>
+          <a href={profile.resume} class="btn btn-primary" target="_blank" rel="noopener">
+            View résumé <Icon name="arrow" size={16} />
+          </a>
+          <a href="#contact" class="btn btn-ghost">Get in touch</a>
+        </div>
+        <ul class="hero-social" data-reveal aria-label="Social links">
+          {
+            profile.socials.map((s) => (
+              <li>
+                <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name}>
+                  <Icon name={s.icon} size={20} />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="hero-photo" data-reveal>
+        <img
+          src="/img/profile.png"
+          width="420"
+          height="420"
+          alt="Portrait of Aditya Jain"
+          fetchpriority="high"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ BLOG ============================ -->
+  <section class="section section-alt" id="blog">
+    <div class="container">
+      <p class="eyebrow" data-reveal>Writing</p>
+      <h2 class="section-title" data-reveal>Blog</h2>
+      <div class="post-list">
+        {
+          recentPosts.map((post) => (
+            <div class="post-row" data-reveal>
+              <div class="post-main">
+                <h3>
+                  <a class="post-link" href={`/blogs/${post.id}.html`}>{post.data.title}</a>
+                </h3>
+                <p>{post.data.description}</p>
+                {post.data.tags.length > 0 && (
+                  <ul class="post-tags">
+                    {post.data.tags.map((t) => (
+                      <li>
+                        <a class="post-tag" href={`/blogs.html?tag=${encodeURIComponent(t)}`}>
+                          {t}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div class="post-meta">
+                {viewsFor(post.id) > 0 && (
+                  <span class="post-views">{formatViews(viewsFor(post.id))} views</span>
+                )}
+                <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
+                <Icon name="arrow" size={16} class="post-arrow" />
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <div class="center" data-reveal>
+        <a href="/blogs.html" class="btn btn-ghost">
+          View all posts <Icon name="arrow" size={16} />
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ SKILLS ============================ -->
+  <section class="section" id="skills">
+    <div class="container">
+      <p class="eyebrow" data-reveal>Toolbox</p>
+      <h2 class="section-title" data-reveal>Skills</h2>
+      <div class="skills-grid">
+        {
+          skillGroups.map((g) => (
+            <div class="skill-group" data-reveal>
+              <h3 class="skill-cat">{g.category}</h3>
+              <ul class="tag-row">
+                {g.items.map((i) => <li class="tag">{i}</li>)}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ PROJECTS ============================ -->
+  <section class="section section-alt" id="projects">
+    <div class="container">
+      <p class="eyebrow" data-reveal>Selected work</p>
+      <h2 class="section-title" data-reveal>Projects</h2>
+      <div class="card-grid">
+        {
+          projects.slice(0, 6).map((p) => (
+            <a class="card" href={p.href} target="_blank" rel="noopener noreferrer" data-reveal>
+              <div class="card-head">
+                <h3>{p.title}</h3>
+                <Icon name="arrow" size={16} class="card-arrow" />
+              </div>
+              <p class="card-desc">{p.description}</p>
+              <p class="card-tags">{p.tags.join(' · ')}</p>
+            </a>
+          ))
+        }
+      </div>
+      <div class="center" data-reveal>
+        <a href={allProjectsUrl} class="btn btn-ghost" target="_blank" rel="noopener">
+          View all projects <Icon name="arrow" size={16} />
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ EXPERIENCE + EDUCATION ============================ -->
+  <section class="section" id="experience">
+    <div class="container two-col">
+      <div>
+        <p class="eyebrow" data-reveal>Career</p>
+        <h2 class="section-title" data-reveal>Experience</h2>
+        <ol class="timeline">
+          {
+            experience.map((e) => (
+              <li class="timeline-item" data-reveal>
+                <span class="timeline-period">{e.period}</span>
+                <h3 class="timeline-role">{e.role}</h3>
+                <p class="timeline-org">{e.org}</p>
+                <p class="timeline-loc">{e.location}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+      <div>
+        <p class="eyebrow" data-reveal>Academics</p>
+        <h2 class="section-title" data-reveal>Education</h2>
+        <ol class="timeline">
+          {
+            education.map((e) => (
+              <li class="timeline-item" data-reveal>
+                <span class="timeline-period">{e.period}</span>
+                <h3 class="timeline-role">{e.role}</h3>
+                <p class="timeline-org">{e.org}</p>
+                <p class="timeline-loc">{e.location}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ CONTACT ============================ -->
+  <section class="section section-alt" id="contact">
+    <div class="container contact-grid">
+      <div>
+        <p class="eyebrow" data-reveal>Say hello</p>
+        <h2 class="section-title" data-reveal>Get in touch</h2>
+        <p class="contact-lede" data-reveal>
+          Have an opportunity, a question, or just want to talk ML? Drop a message and I'll get
+          back to you.
+        </p>
+        <ul class="contact-details" data-reveal>
+          <li>
+            <Icon name="mail" size={18} />
+            <a href={`mailto:${profile.email}`}>{profile.email}</a>
+          </li>
+          <li>
+            <Icon name="location" size={18} />
+            <span>{profile.location}</span>
+          </li>
+        </ul>
+      </div>
+      <form
+        class="contact-form"
+        action={profile.formspree}
+        method="POST"
+        data-reveal
+      >
+        <input type="hidden" name="_subject" value="Contact request from adityajain.me" />
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" name="email" id="email" required placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label for="message">Message</label>
+          <textarea name="message" id="message" rows="4" required placeholder="Write your message…"
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Send message <Icon name="arrow" size={16} /></button>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    padding-top: clamp(3rem, 7vw, 5.5rem);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .hero-title {
+    font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+    margin-block: 0.5rem 1.5rem;
+  }
+  .hero-title .accent {
+    color: var(--accent);
+  }
+  .hero-bio {
+    color: var(--text-muted);
+    max-width: 44ch;
+    margin-bottom: 1rem;
+  }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 1.8rem;
+  }
+  .hero-social {
+    display: flex;
+    gap: 0.6rem;
+    list-style: none;
+    padding: 0;
+    margin-top: 2rem;
+  }
+  .hero-social a {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 10px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    transition: all 0.15s var(--ease);
+  }
+  .hero-social a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .hero-photo img {
+    width: 100%;
+    max-width: 380px;
+    margin-inline: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ---------- Section backgrounds ---------- */
+  .section-alt {
+    background: var(--bg-subtle);
+    border-block: 1px solid var(--border);
+  }
+  .center {
+    text-align: center;
+    margin-top: 2.5rem;
+  }
+
+  /* ---------- Project cards (bento — mixed tile sizes) ---------- */
+  /* Every tile covers the SAME area (2 grid cells) but a different shape —
+     wide (2×1) or tall (1×2) — so the wall looks varied, not uniform, while
+     each card gets equal visual weight. No gaps. */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 12rem);
+    grid-template-areas:
+      'a a b c'
+      'd e b c'
+      'd e f f';
+    gap: 1rem;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1.4rem 1.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    overflow: hidden;
+    transition: border-color 0.2s var(--ease), transform 0.2s var(--ease),
+      box-shadow 0.2s var(--ease);
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    color: var(--text);
+  }
+  .card:nth-child(1) { grid-area: a; }
+  .card:nth-child(2) { grid-area: b; }
+  .card:nth-child(3) { grid-area: c; }
+  .card:nth-child(4) { grid-area: d; }
+  .card:nth-child(5) { grid-area: e; }
+  .card:nth-child(6) { grid-area: f; }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .card-head h3 {
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+  /* Up-right arrow hints at an external link; nudges on hover. */
+  .card-arrow {
+    color: var(--text-faint);
+    flex-shrink: 0;
+    transform: rotate(-45deg);
+    transition: color 0.2s var(--ease), transform 0.2s var(--ease);
+  }
+  .card:hover .card-arrow {
+    color: var(--accent);
+    transform: rotate(-45deg) translateX(3px);
+  }
+  .card-desc {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-tags {
+    margin-top: auto;
+    padding-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+    color: var(--text-faint);
+  }
+
+  /* ---------- Tags ---------- */
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    list-style: none;
+    padding: 0;
+    margin-top: auto;
+  }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  /* ---------- Skills ---------- */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+  .skill-cat {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+  .skill-group .tag {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+
+  /* ---------- Blog list ---------- */
+  .post-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .post-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.4rem 0;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+  }
+  .post-row:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+  .post-main h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.3rem;
+    transition: color 0.15s var(--ease);
+  }
+  /* Stretched title link: covers the whole row so any non-interactive area
+     opens the post, while tag links stay clickable above it. */
+  .post-link {
+    color: inherit;
+  }
+  .post-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .post-row:hover .post-main h3 {
+    color: var(--accent);
+  }
+  .post-main p {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    max-width: 65ch;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin-top: 0.7rem;
+  }
+  .post-tag {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.01em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .post-tag:hover {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  .post-views {
+    white-space: nowrap;
+  }
+  .post-views::after {
+    content: '·';
+    margin-left: 0.9rem;
+    color: var(--text-faint);
+  }
+  .post-arrow {
+    transition: transform 0.2s var(--ease);
+  }
+  .post-row:hover .post-arrow {
+    transform: translateX(4px);
+    color: var(--accent);
+  }
+
+  /* ---------- Timeline ---------- */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: start;
+  }
+  .timeline {
+    list-style: none;
+    padding: 0;
+    border-left: 1px solid var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    padding: 0 0 1.8rem 1.5rem;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+  .timeline-period {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-faint);
+  }
+  .timeline-role {
+    font-size: 1.05rem;
+    margin-top: 0.2rem;
+  }
+  .timeline-org {
+    color: var(--accent);
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+  .timeline-loc {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  /* ---------- Contact ---------- */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: start;
+  }
+  .contact-lede {
+    color: var(--text-muted);
+    max-width: 40ch;
+    margin-bottom: 1.5rem;
+  }
+  .contact-details {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .contact-details li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--text-muted);
+  }
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.75rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .field label {
+    font-size: 0.85rem;
+    font-weight: 550;
+    color: var(--text-muted);
+  }
+  .field input,
+  .field textarea {
+    font: inherit;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    color: var(--text);
+    resize: vertical;
+    transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  }
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .contact-form .btn {
+    align-self: flex-start;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    .hero-grid,
+    .two-col,
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero-photo {
+      order: -1;
+    }
+    .hero-photo img {
+      max-width: 240px;
+    }
+    /* Two columns: wide banners top & bottom, tall pairs between — still
+       equal area (2 cells) per tile. */
+    .card-grid {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(6, 10rem);
+      grid-template-areas:
+        'a a'
+        'b c'
+        'b c'
+        'd e'
+        'd e'
+        'f f';
+    }
+  }
+  @media (max-width: 620px) {
+    .skills-grid {
+      grid-template-columns: 1fr;
+    }
+    /* Single column: reset the bento so cards stack at natural height. */
+    .card-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      grid-auto-rows: auto;
+      grid-template-areas: none;
+    }
+    .card:nth-child(1),
+    .card:nth-child(2),
+    .card:nth-child(3),
+    .card:nth-child(4),
+    .card:nth-child(5),
+    .card:nth-child(6) {
+      grid-area: auto;
+    }
+    .post-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+  }
+</style>

@@ -1,0 +1,281 @@
+---
+import 'katex/dist/katex.min.css';
+import BaseLayout from './BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+
+import { formatViews } from '../data/views';
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  tags?: string[];
+  disqusId?: string | number;
+  slug: string;
+  views?: number;
+}
+const { title, description, pubDate, tags = [], disqusId, slug, views = 0 } = Astro.props;
+
+const fmt = pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+const canonical = new URL(`/blogs/${slug}.html`, Astro.site).href;
+---
+
+<BaseLayout title={`${title} — Aditya Jain`} description={description} type="article">
+  <article class="post">
+    <div class="container post-container">
+      <a href="/#blog" class="post-back">
+        <Icon name="arrow" size={15} class="flip" /> All posts
+      </a>
+
+      <header class="post-header">
+        <div class="post-datemeta">
+          <time datetime={pubDate.toISOString()}>{fmt}</time>
+          <span aria-hidden="true">·</span>
+          <span>Aditya Jain</span>
+          {
+            views > 0 && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{formatViews(views)} views</span>
+              </>
+            )
+          }
+        </div>
+        <h1>{title}</h1>
+        {
+          tags.length > 0 && (
+            <ul class="tag-row">
+              {tags.map((t) => (
+                <li class="tag">{t}</li>
+              ))}
+            </ul>
+          )
+        }
+      </header>
+
+      <div class="prose">
+        <slot />
+      </div>
+
+      <hr class="post-rule" />
+
+      <section class="comments">
+        <h2>Comments</h2>
+        <div id="disqus_thread"></div>
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </section>
+    </div>
+  </article>
+
+  <script define:vars={{ canonical, disqusId }}>
+    // Load Disqus, preserving the original per-post thread identifier
+    // so historical comments stay attached.
+    window.disqus_config = function () {
+      this.page.url = canonical;
+      if (disqusId !== undefined && disqusId !== null) {
+        this.page.identifier = disqusId;
+      }
+    };
+    (function () {
+      const d = document;
+      const s = d.createElement('script');
+      s.src = 'https://adityajn105.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', String(+new Date()));
+      (d.head || d.body).appendChild(s);
+    })();
+
+    // Disqus detects light/dark from the page background only when it loads,
+    // so it doesn't follow our theme toggle. Re-render it on theme changes so
+    // the thread matches (fixes the dark-mode contrast on comments).
+    (function () {
+      let timer;
+      const resetDisqus = () => {
+        if (typeof DISQUS === 'undefined') return;
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          DISQUS.reset({ reload: true, config: window.disqus_config });
+        }, 200);
+      };
+      new MutationObserver((records) => {
+        if (records.some((r) => r.attributeName === 'data-theme')) resetDisqus();
+      }).observe(document.documentElement, { attributes: true });
+    })();
+  </script>
+</BaseLayout>
+
+<style>
+  .post-container {
+    max-width: var(--maxw-prose);
+    padding-top: 2.5rem;
+  }
+  .post-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+  }
+  .post-back:hover {
+    color: var(--accent);
+  }
+  .post-back :global(.flip) {
+    transform: rotate(180deg);
+  }
+  .post-datemeta {
+    display: flex;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-faint);
+    margin-bottom: 1rem;
+  }
+  .post-header h1 {
+    font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+    margin-bottom: 1.2rem;
+  }
+  .post-header .tag-row {
+    margin-top: 1.2rem;
+  }
+  .post-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-block: 3.5rem 2.5rem;
+  }
+  .comments h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+  }
+  /* Disqus picks light vs dark by sampling the background behind its (cross-
+     origin, transparent) iframe. A transparent container makes it default to
+     light, which then shows our dark page through the gaps. Giving it an
+     explicit theme background lets its automatic detection read the theme. */
+  #disqus_thread {
+    background: var(--bg);
+  }
+
+  /* -------------------------------- Prose -------------------------------- */
+  .prose {
+    font-size: 1.06rem;
+    line-height: 1.75;
+    color: var(--text);
+  }
+  .prose :global(h2) {
+    font-size: 1.6rem;
+    margin-top: 2.6rem;
+    margin-bottom: 1rem;
+    scroll-margin-top: 5rem;
+  }
+  .prose :global(h3) {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.8rem;
+  }
+  .prose :global(p) {
+    margin-bottom: 1.25rem;
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    margin-bottom: 1.25rem;
+    padding-left: 1.4rem;
+  }
+  .prose :global(li) {
+    margin-bottom: 0.4rem;
+  }
+  .prose :global(li::marker) {
+    color: var(--text-faint);
+  }
+  .prose :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--accent-soft);
+  }
+  .prose :global(a:hover) {
+    text-decoration-color: var(--accent);
+  }
+  .prose :global(img) {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin: 2rem auto;
+    background: var(--bg-elevated);
+  }
+  .prose :global(blockquote) {
+    border-left: 3px solid var(--accent);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .prose :global(strong) {
+    font-weight: 650;
+  }
+  /* Inline code */
+  .prose :global(:not(pre) > code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    padding: 0.1em 0.4em;
+    border-radius: 6px;
+  }
+  /* Code blocks (Shiki dual-theme) */
+  .prose :global(pre) {
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .prose :global(pre) :global(code) {
+    font-family: var(--font-mono);
+  }
+  /* Tables */
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .prose :global(th) {
+    background: var(--bg-subtle);
+  }
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-block: 2rem;
+  }
+  /* Math overflow on small screens */
+  .prose :global(.katex-display) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.4rem;
+  }
+</style>
+
+<style is:global>
+  /* Shiki dual-theme: swap variables when the dark theme is active */
+  html[data-theme='dark'] .astro-code,
+  html[data-theme='dark'] .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+</style>

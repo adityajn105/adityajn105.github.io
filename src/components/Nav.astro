@@ -1,0 +1,339 @@
+---
+import Icon from './Icon.astro';
+import { nav, profile } from '../data/profile';
+
+// Accent palettes offered by the color picker. `id` matches the
+// `data-palette` value handled in global.css ('default' = base Cobalt, no
+// attribute). `color` is the light-theme swatch shown in the menu.
+const palettes = [
+  { id: 'default', label: 'Cobalt', color: '#3b5bdb' },
+  { id: 'emerald', label: 'Emerald', color: '#0e9f6e' },
+  { id: 'amber', label: 'Amber', color: '#c2620a' },
+  { id: 'rose', label: 'Rose', color: '#e11d48' },
+  { id: 'violet', label: 'Violet', color: '#7c3aed' },
+  { id: 'cyan', label: 'Cyan', color: '#0e8ba8' },
+];
+---
+
+<header class="nav" id="site-nav">
+  <div class="container nav-inner">
+    <a href="/" class="brand" aria-label="Home">
+      <span class="brand-mark">AJ</span>
+      <span class="brand-name">{profile.name}</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Primary">
+      {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+
+    <div class="nav-actions">
+      <div class="palette-wrap">
+        <button
+          id="palette-toggle"
+          class="icon-btn"
+          type="button"
+          aria-label="Choose accent color"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          <span class="swatch-dot" aria-hidden="true"></span>
+        </button>
+        <div class="palette-menu" id="palette-menu" role="menu" aria-label="Accent colors">
+          {
+            palettes.map((p) => (
+              <button
+                class="palette-swatch"
+                type="button"
+                role="menuitemradio"
+                aria-checked="false"
+                data-palette={p.id}
+                style={`--sw:${p.color}`}
+                aria-label={p.label}
+                title={p.label}
+              />
+            ))
+          }
+        </div>
+      </div>
+      <button
+        id="theme-toggle"
+        class="icon-btn"
+        type="button"
+        aria-label="Toggle color theme"
+      >
+        <Icon name="sun" size={18} class="icon-sun" />
+        <Icon name="moon" size={18} class="icon-moon" />
+      </button>
+      <button
+        id="menu-toggle"
+        class="icon-btn menu-only"
+        type="button"
+        aria-label="Toggle menu"
+        aria-expanded="false"
+      >
+        <Icon name="menu" size={20} class="icon-menu" />
+        <Icon name="close" size={20} class="icon-close" />
+      </button>
+    </div>
+  </div>
+
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile">
+    {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    <a href={profile.resume} class="btn btn-primary" target="_blank" rel="noopener">Resume</a>
+  </nav>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+  }
+  .nav.scrolled {
+    border-bottom-color: var(--border);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 4rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .nav-links {
+    display: flex;
+    gap: 1.8rem;
+    font-size: 0.94rem;
+  }
+  .nav-links a {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .nav-links a:hover {
+    color: var(--text);
+  }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* Palette picker */
+  .palette-wrap {
+    position: relative;
+  }
+  .swatch-dot {
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  }
+  .palette-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding: 0.7rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-md);
+    z-index: 60;
+  }
+  .palette-wrap.open .palette-menu {
+    display: grid;
+  }
+  .palette-swatch {
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--sw);
+    border: 2px solid transparent;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+    transition: transform 0.12s var(--ease);
+  }
+  .palette-swatch:hover {
+    transform: scale(1.12);
+  }
+  .palette-swatch[aria-checked='true'] {
+    border-color: var(--text);
+  }
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s var(--ease);
+  }
+  .icon-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .icon-btn :global(svg) {
+    grid-area: 1 / 1;
+  }
+  /* Theme icon crossfade */
+  .icon-moon {
+    display: none;
+  }
+  :global(html[data-theme='dark']) .icon-sun {
+    display: none;
+  }
+  :global(html[data-theme='dark']) .icon-moon {
+    display: block;
+  }
+  /* Menu icon state */
+  .icon-close {
+    display: none;
+  }
+  .menu-only {
+    display: none;
+  }
+  .mobile-menu {
+    display: none;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 1.5rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-menu a:not(.btn) {
+    padding: 0.6rem 0;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-menu .btn {
+    margin-top: 0.75rem;
+    justify-content: center;
+  }
+  .nav.menu-open .mobile-menu {
+    display: flex;
+  }
+  .nav.menu-open .icon-menu {
+    display: none;
+  }
+  .nav.menu-open .icon-close {
+    display: block;
+  }
+
+  @media (max-width: 720px) {
+    .nav-links {
+      display: none;
+    }
+    .menu-only {
+      display: grid;
+    }
+  }
+</style>
+
+<script>
+  const nav = document.getElementById('site-nav');
+  const themeToggle = document.getElementById('theme-toggle');
+  const menuToggle = document.getElementById('menu-toggle');
+
+  // Theme
+  themeToggle?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try {
+      localStorage.setItem('theme', next);
+    } catch (e) {}
+  });
+
+  // Accent palette picker
+  const paletteToggle = document.getElementById('palette-toggle');
+  const paletteMenu = document.getElementById('palette-menu');
+  const paletteWrap = paletteToggle?.closest('.palette-wrap');
+  const swatches = paletteMenu?.querySelectorAll('[data-palette]');
+
+  const applyPalette = (p: string | null) => {
+    const root = document.documentElement;
+    const active = p || 'default';
+    if (active === 'default') root.removeAttribute('data-palette');
+    else root.setAttribute('data-palette', active);
+    swatches?.forEach((b) =>
+      b.setAttribute('aria-checked', String(b.getAttribute('data-palette') === active))
+    );
+  };
+
+  // Reflect the palette applied pre-paint in the menu's active state.
+  applyPalette(document.documentElement.getAttribute('data-palette'));
+
+  const closePalette = () => {
+    paletteWrap?.classList.remove('open');
+    paletteToggle?.setAttribute('aria-expanded', 'false');
+  };
+
+  paletteToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = paletteWrap?.classList.toggle('open');
+    paletteToggle.setAttribute('aria-expanded', String(!!open));
+  });
+  swatches?.forEach((b) =>
+    b.addEventListener('click', () => {
+      const p = b.getAttribute('data-palette');
+      applyPalette(p);
+      try {
+        localStorage.setItem('palette', p || 'default');
+      } catch (e) {}
+      closePalette();
+    })
+  );
+  document.addEventListener('click', (e) => {
+    if (paletteWrap && !paletteWrap.contains(e.target as Node)) closePalette();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePalette();
+  });
+
+  // Mobile menu
+  menuToggle?.addEventListener('click', () => {
+    const open = nav?.classList.toggle('menu-open');
+    menuToggle.setAttribute('aria-expanded', String(!!open));
+  });
+  document.querySelectorAll('#mobile-menu a').forEach((a) =>
+    a.addEventListener('click', () => {
+      nav?.classList.remove('menu-open');
+      menuToggle?.setAttribute('aria-expanded', 'false');
+    })
+  );
+
+  // Border on scroll
+  const onScroll = () => nav?.classList.toggle('scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>

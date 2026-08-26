@@ -1,0 +1,84 @@
+---
+import Icon from './Icon.astro';
+import { profile } from '../data/profile';
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <p class="footer-name">{profile.name}</p>
+      <p class="footer-sub">{profile.role}</p>
+    </div>
+    <ul class="footer-social" aria-label="Social links">
+      {
+        profile.socials.map((s) => (
+          <li>
+            <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name}>
+              <Icon name={s.icon} size={20} />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="footer-copy">© {year} {profile.name}. Built with Astro.</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-block: 2.5rem;
+    margin-top: 2rem;
+  }
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+  .footer-name {
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+  .footer-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  .footer-social {
+    display: flex;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+  }
+  .footer-social a {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 8px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: all 0.15s var(--ease);
+  }
+  .footer-social a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .footer-copy {
+    color: var(--text-faint);
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: center;
+    padding-top: 0.5rem;
+  }
+  @media (min-width: 720px) {
+    .footer-copy {
+      width: auto;
+      text-align: right;
+      padding-top: 0;
+    }
+  }
+</style>
