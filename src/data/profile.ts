@@ -18,7 +18,7 @@ export const profile = {
   ],
   // Contact form endpoint. Formspree's classic email endpoint is deprecated;
   // replace with your form id (https://formspree.io/f/xxxxxxx) — see CLAUDE.md.
-  formspree: 'https://formspree.io/f/mainquiry',
+  formspree: 'https://formspree.io/adityajn105@gmail.com',
 } as const;
 
 export const nav = [
