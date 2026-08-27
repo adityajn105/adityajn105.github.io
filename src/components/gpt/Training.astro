@@ -1,0 +1,13 @@
+---
+// Live cross-entropy training descent.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-tr></div>
+</figure>
+
+<script>
+  import { mountTraining } from '../../scripts/gpt/generation.js';
+  document.querySelectorAll('[data-gpt-tr]').forEach((el) => mountTraining(el));
+</script>

@@ -1,0 +1,13 @@
+---
+// Multi-head attention: switch between heads that learned different relations.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-heads></div>
+</figure>
+
+<script>
+  import { mountHeads } from '../../scripts/gpt/attention.js';
+  document.querySelectorAll('[data-gpt-heads]').forEach((el) => mountHeads(el));
+</script>

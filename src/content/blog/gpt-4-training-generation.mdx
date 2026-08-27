@@ -1,0 +1,81 @@
+---
+title: "How GPT Works — Part 4: Training & Generation"
+description: "How a transformer learns and how it writes. Part 4 covers next-token cross-entropy training with an interactive loss-descent demo, then decoding strategies — greedy, temperature, top-k, and top-p sampling — you can reshape live."
+pubDate: 2026-08-29
+tags: ["GPT", "Deep Learning", "NLP", "Training"]
+---
+
+import SeriesNav from '../../components/gpt/SeriesNav.astro';
+import Training from '../../components/gpt/Training.astro';
+import Sampling from '../../components/gpt/Sampling.astro';
+
+[Part 3](/blogs/gpt-3-transformer.html) assembled the architecture — text in, a probability over the
+next token out. But an untrained transformer's probabilities are noise. This part covers the two
+processes that bracket a working model: **training**, which teaches it to put probability on the right
+token, and **generation**, which turns those probabilities back into text.
+
+<SeriesNav current={4} />
+
+## Training: one loss function, trillions of times
+
+Training a GPT is conceptually the same supervised learning you already know — it just manufactures
+its own labels. Take any text; at every position the "correct answer" is simply *the token that
+actually came next*. No human annotation required, which is why the entire internet becomes training
+data. Feeding the true previous tokens while predicting the next one is called **teacher forcing**.
+
+The model is scored with **cross-entropy loss**: if it assigned probability $p$ to the token that
+truly came next, the loss for that position is $-\log p$. Confident and right → tiny loss; confident
+and wrong → large loss.
+
+$$ \mathcal{L} = -\frac{1}{N}\sum_{t=1}^{N} \log P(x_t \mid x_1, \ldots, x_{t-1}) $$
+
+The elegant part is the gradient. For softmax + cross-entropy it collapses to **predicted minus
+target** — push the correct token's probability up, everything else down. Watch one token learn:
+
+<Training />
+
+Now scale that intuition: the same objective, run over trillions of tokens with billions of
+parameters. Nothing about the goal changes — the model just gets relentlessly better at predicting
+the next token, and grammar, facts, and reasoning emerge as a side effect (the observation behind
+**scaling laws**: more data + parameters + compute predictably lowers loss).
+
+## Generation: from probabilities back to text
+
+A trained model gives you a probability distribution over the next token. **Decoding** is the policy
+that turns that distribution into an actual choice, and it dramatically changes the output's character:
+
+- **Greedy** — always take the single most likely token. Coherent but repetitive and flat.
+- **Temperature** — the knob from [Part 1](/blogs/gpt-1-foundations.html): divide the logits before
+  softmax to sharpen (low, conservative) or flatten (high, adventurous) the distribution.
+- **Top-k** — sample only from the $k$ most likely tokens, discarding the long tail of nonsense.
+- **Top-p (nucleus)** — sample from the smallest set of tokens whose probability sums past $p$, so
+  the pool grows and shrinks with the model's confidence.
+
+Reshape a real next-token distribution and watch what survives:
+
+<Sampling />
+
+This is exactly the sampler you were playing with in [Part 1](/blogs/gpt-1-foundations.html)'s
+next-token loop, now with the professional knobs exposed. A more exhaustive alternative,
+**beam search**, keeps several candidate sequences alive at once and is common in translation and
+captioning — I walk through it in my [Image Captioning](/blogs/image-captioning.html) post — but
+open-ended chat models lean on top-p sampling for variety.
+
+## Key takeaways
+
+- GPT training is **self-supervised**: the label is just the next token, so raw text is the dataset.
+- **Cross-entropy loss** $-\log P(\text{true token})$ rewards confident-correct and punishes confident-wrong.
+- Its gradient is simply **predicted − target** — the whole learning signal.
+- **Scaling laws**: more data, parameters, and compute predictably drive the loss down.
+- **Decoding** converts probabilities to text: greedy, temperature, top-k, and top-p trade off coherence against diversity.
+
+## Go deeper
+
+- [Let's build GPT: from scratch, in code](https://www.youtube.com/watch?v=kCc8FmEb1nY) — Karpathy trains a transformer live.
+- [The Illustrated GPT-2](https://jalammar.github.io/illustrated-gpt2/) — includes a clear treatment of sampling.
+- [How to generate text](https://huggingface.co/blog/how-to-generate) — Hugging Face's hands-on guide to greedy, beam, top-k, and top-p decoding.
+- My [Image Captioning](/blogs/image-captioning.html) post — beam search and BLEU for sequence generation.
+
+The last part steps back: how a raw next-token predictor becomes the helpful assistant you actually chat with.
+
+<SeriesNav current={4} position="bottom" />

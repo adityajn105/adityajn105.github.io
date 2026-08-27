@@ -1,0 +1,13 @@
+---
+// Sinusoidal positional-encoding heatmap, computed live.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-pe></div>
+</figure>
+
+<script>
+  import { mountPositional } from '../../scripts/gpt/attention.js';
+  document.querySelectorAll('[data-gpt-pe]').forEach((el) => mountPositional(el));
+</script>

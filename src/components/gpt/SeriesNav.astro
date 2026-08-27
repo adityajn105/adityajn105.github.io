@@ -1,0 +1,113 @@
+---
+// Series navigation for the "How GPT Works" multi-part guide.
+// `position="top"` renders the full contents list; `position="bottom"`
+// renders previous/next links. Unpublished parts show as "coming soon".
+interface Props {
+  current: number;
+  position?: 'top' | 'bottom';
+}
+const { current, position = 'top' } = Astro.props;
+
+const parts = [
+  { n: 1, slug: 'gpt-1-foundations', title: 'The Foundations', published: true },
+  { n: 2, slug: 'gpt-2-attention', title: 'Attention', published: true },
+  { n: 3, slug: 'gpt-3-transformer', title: 'The Transformer', published: true },
+  { n: 4, slug: 'gpt-4-training-generation', title: 'Training & Generation', published: true },
+  { n: 5, slug: 'gpt-5-base-to-chatgpt', title: 'Base Model → ChatGPT', published: true },
+];
+const href = (p: { slug: string }) => `/blogs/${p.slug}.html`;
+const prev = parts.find((p) => p.n === current - 1);
+const next = parts.find((p) => p.n === current + 1);
+---
+
+{position === 'top' && (
+  <nav class="gpt-series" aria-label="Series contents">
+    <p class="gpt-series__eyebrow">A 5-part series · How GPT Works</p>
+    <ol class="gpt-series__list">
+      {parts.map((p) => (
+        <li class:list={['gpt-series__item', { current: p.n === current }]}>
+          <span class="gpt-series__num">{String(p.n).padStart(2, '0')}</span>
+          {p.n === current ? (
+            <span class="gpt-series__title" aria-current="true">{p.title}</span>
+          ) : p.published ? (
+            <a class="gpt-series__title" href={href(p)}>{p.title}</a>
+          ) : (
+            <span class="gpt-series__title muted">{p.title} <span class="gpt-series__soon">coming soon</span></span>
+          )}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+{position === 'bottom' && (
+  <nav class="gpt-series gpt-series--pager" aria-label="Series navigation">
+    {prev && prev.published ? (
+      <a class="gpt-series__pg prev" href={href(prev)}>
+        <span class="gpt-series__dir">← Previous</span>
+        <span class="gpt-series__pgt">Part {prev.n}: {prev.title}</span>
+      </a>
+    ) : <span />}
+    {next ? (
+      next.published ? (
+        <a class="gpt-series__pg next" href={href(next)}>
+          <span class="gpt-series__dir">Next →</span>
+          <span class="gpt-series__pgt">Part {next.n}: {next.title}</span>
+        </a>
+      ) : (
+        <span class="gpt-series__pg next disabled">
+          <span class="gpt-series__dir">Next →</span>
+          <span class="gpt-series__pgt">Part {next.n}: {next.title} (coming soon)</span>
+        </span>
+      )
+    ) : <span />}
+  </nav>
+)}
+
+<style>
+  .gpt-series {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
+    padding: 1.2rem 1.4rem;
+    margin: 2rem 0;
+  }
+  .gpt-series__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+  .gpt-series__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .gpt-series__item { display: flex; align-items: baseline; gap: 0.7rem; }
+  .gpt-series__num { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+  .gpt-series__item.current .gpt-series__num { color: var(--accent); }
+  .gpt-series__title { font-weight: 550; }
+  .gpt-series__item.current .gpt-series__title { color: var(--accent); }
+  a.gpt-series__title { color: var(--text); text-decoration: none; }
+  a.gpt-series__title:hover { color: var(--accent); }
+  .gpt-series__title.muted { color: var(--text-faint); font-weight: 450; }
+  .gpt-series__soon {
+    font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em;
+    text-transform: uppercase; border: 1px solid var(--border-strong);
+    border-radius: 999px; padding: 0.05em 0.5em; margin-left: 0.3rem; color: var(--text-faint);
+  }
+
+  .gpt-series--pager { display: flex; gap: 1rem; background: transparent; border: none; padding: 0; }
+  .gpt-series__pg {
+    flex: 1; display: flex; flex-direction: column; gap: 0.25rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1rem 1.2rem; background: var(--bg-elevated); text-decoration: none;
+    transition: border-color 0.18s var(--ease);
+  }
+  a.gpt-series__pg:hover { border-color: var(--accent); }
+  .gpt-series__pg.next { text-align: right; }
+  .gpt-series__pg.disabled { opacity: 0.55; }
+  .gpt-series__dir {
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .gpt-series__pgt { font-weight: 600; color: var(--text); }
+</style>

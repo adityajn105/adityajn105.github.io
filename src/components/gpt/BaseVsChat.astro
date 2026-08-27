@@ -1,0 +1,13 @@
+---
+// Base model vs aligned model on the same prompt.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-bc></div>
+</figure>
+
+<script>
+  import { mountBaseVsChat } from '../../scripts/gpt/chatgpt.js';
+  document.querySelectorAll('[data-gpt-bc]').forEach((el) => mountBaseVsChat(el));
+</script>

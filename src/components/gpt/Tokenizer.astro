@@ -1,0 +1,13 @@
+---
+// Live BPE merge-learning playground.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-tk></div>
+</figure>
+
+<script>
+  import { mountTokenizer } from '../../scripts/gpt/transformer.js';
+  document.querySelectorAll('[data-gpt-tk]').forEach((el) => mountTokenizer(el));
+</script>

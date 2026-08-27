@@ -1,0 +1,13 @@
+---
+// Sampling playground — temperature / top-k / top-p.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-sp></div>
+</figure>
+
+<script>
+  import { mountSampling } from '../../scripts/gpt/generation.js';
+  document.querySelectorAll('[data-gpt-sp]').forEach((el) => mountSampling(el));
+</script>

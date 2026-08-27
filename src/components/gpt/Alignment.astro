@@ -1,0 +1,13 @@
+---
+// Cross-attention alignment heatmap (EN ↔ FR).
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-align></div>
+</figure>
+
+<script>
+  import { mountAlignment } from '../../scripts/gpt/attention.js';
+  document.querySelectorAll('[data-gpt-align]').forEach((el) => mountAlignment(el));
+</script>

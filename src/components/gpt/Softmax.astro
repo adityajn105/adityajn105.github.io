@@ -1,0 +1,13 @@
+---
+// Softmax explorer: logit sliders + temperature.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-sm></div>
+</figure>
+
+<script>
+  import { mountSoftmax } from '../../scripts/gpt/basics.js';
+  document.querySelectorAll('[data-gpt-sm]').forEach((el) => mountSoftmax(el));
+</script>

@@ -1,0 +1,11 @@
+---
+// The autoregressive-loop playground (self-framed via .nt-stage).
+import '../../styles/gpt-widgets.css';
+---
+
+<div class="gpt-root" data-gpt-nt></div>
+
+<script>
+  import { mountNextToken } from '../../scripts/gpt/next-token.js';
+  document.querySelectorAll('[data-gpt-nt]').forEach((el) => mountNextToken(el));
+</script>

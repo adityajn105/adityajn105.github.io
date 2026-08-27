@@ -1,0 +1,313 @@
+/* =========================================================================
+   Interactive widgets for the "How GPT Works" blog series.
+   All rules are scoped under `.gpt-root` (the mount container each widget
+   component renders) and use the site's own design tokens from global.css,
+   so widgets automatically follow the light/dark theme and every accent
+   palette. Two extra local hues (secondary + negative) are defined per
+   theme below and used only inside widgets.
+   ========================================================================= */
+
+.gpt-root {
+  --gpt-c2: #0e9f6e;   /* secondary data color (emerald) */
+  --gpt-warn: #e11d48; /* negative / opposite (rose) */
+  margin: 0;
+  font-family: var(--font-sans);
+}
+:root[data-theme='dark'] .gpt-root {
+  --gpt-c2: #34d399;
+  --gpt-warn: #fb7185;
+}
+
+/* A framed stage around a widget (used inside components + by nt-stage) */
+.gpt-figure,
+.gpt-root .nt-stage {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem;
+  box-shadow: var(--shadow-sm);
+  margin: 1.6rem 0;
+}
+
+.gpt-root .mono { font-family: var(--font-mono); }
+.gpt-root .figure__cap {
+  font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.6;
+  color: var(--text-faint); margin: 1rem 0 0;
+}
+.gpt-root .figure__cap b { color: var(--accent); font-weight: 500; }
+
+/* ---- shared controls -------------------------------------------------- */
+.gpt-root .controls { display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; align-items: center; margin: 1rem 0; }
+.gpt-root .control { display: flex; flex-direction: column; gap: 0.3rem; }
+.gpt-root .control label {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.gpt-root input[type="range"] { accent-color: var(--accent); width: 210px; max-width: 60vw; }
+.gpt-root select,
+.gpt-root .btn {
+  font-family: var(--font-mono); font-size: 0.82rem; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--text);
+  border-radius: var(--radius-sm); padding: 0.5rem 0.9rem; transition: all 0.18s var(--ease);
+}
+.gpt-root .btn:hover, .gpt-root select:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.gpt-root .btn--primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+.gpt-root .btn--primary:hover { background: var(--accent-hover); color: var(--accent-contrast); }
+.gpt-root input:focus-visible, .gpt-root .btn:focus-visible, .gpt-root select:focus-visible,
+.gpt-root .dp-handle:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+
+/* =========================================================================
+   next-token widget
+   ========================================================================= */
+.gpt-root .nt-text { font-size: 1.2rem; line-height: 1.55; }
+.gpt-root .nt-tok { transition: color 0.2s; }
+.gpt-root .nt-tok.is-last { color: var(--accent); background: var(--accent-soft); border-radius: 5px; padding: 0 0.15em; }
+.gpt-root .nt-cursor { color: var(--accent); animation: gpt-blink 1.1s steps(2) infinite; }
+@keyframes gpt-blink { 50% { opacity: 0; } }
+.gpt-root .nt-pop { animation: gpt-pop 0.4s var(--ease); display: inline-block; }
+@keyframes gpt-pop { from { transform: translateY(-6px) scale(0.9); opacity: 0; } }
+.gpt-root .nt-arrow { color: var(--text-faint); font-size: 0.78rem; margin: 1rem 0 0.8rem; }
+.gpt-root .nt-bars { display: grid; gap: 0.45rem; }
+.gpt-root .nt-bar { display: grid; grid-template-columns: 5.5rem 1fr 3rem; align-items: center; gap: 0.7rem;
+  background: none; border: none; padding: 0.15rem 0.2rem; cursor: pointer; border-radius: 6px; text-align: left; }
+.gpt-root .nt-bar:hover { background: var(--bg-subtle); }
+.gpt-root .nt-bar:hover .nt-bar-fill { filter: brightness(1.08); }
+.gpt-root .nt-bar-label { color: var(--text); font-size: 0.9rem; text-align: right; }
+.gpt-root .nt-bar-track { height: 22px; background: var(--bg-subtle); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+.gpt-root .nt-bar-fill { display: block; height: 100%; border-radius: 5px 0 0 5px;
+  background: linear-gradient(90deg, var(--gpt-c2), var(--accent)); transition: width 0.5s var(--ease); }
+.gpt-root .nt-bar-pct { color: var(--text-muted); font-size: 0.8rem; }
+
+/* =========================================================================
+   dot-product widget
+   ========================================================================= */
+.gpt-root .viz-svg { width: 100%; height: auto; display: block; font-family: var(--font-mono); }
+.gpt-root .dp-grid { display: grid; grid-template-columns: minmax(0, 380px) 1fr; gap: 1.5rem; align-items: center; }
+.gpt-root .dp-svg { touch-action: none; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.gpt-root .dp-gl { stroke: var(--border); stroke-width: 1; }
+.gpt-root .dp-ax { stroke: var(--text-faint); stroke-width: 1.5; }
+.gpt-root .dp-line-a { stroke: var(--gpt-c2); stroke-width: 3; marker-end: url(#ah-a); }
+.gpt-root .dp-line-b { stroke: var(--accent); stroke-width: 3; marker-end: url(#ah-b); }
+.gpt-root .dp-handle { cursor: grab; fill: transparent; stroke-width: 2; }
+.gpt-root .dp-handle:active { cursor: grabbing; }
+.gpt-root .dp-a { stroke: var(--gpt-c2); } .gpt-root .dp-b { stroke: var(--accent); }
+.gpt-root .dp-handle:hover { fill: color-mix(in srgb, var(--text) 8%, transparent); }
+.gpt-root .dp-lbl { font-family: var(--font-mono); font-size: 15px; font-style: italic; }
+.gpt-root .dp-lbl-a { fill: var(--gpt-c2); } .gpt-root .dp-lbl-b { fill: var(--accent); }
+.gpt-root .dp-verdict { font-family: var(--font-mono); font-size: 0.82rem; padding: 0.5rem 0.7rem; border-radius: var(--radius-sm); margin-bottom: 0.9rem; border: 1px solid var(--border); }
+.gpt-root .dp-verdict.pos { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 10%, transparent); }
+.gpt-root .dp-verdict.neg { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 10%, transparent); }
+.gpt-root .dp-verdict.zero { color: var(--text-muted); }
+.gpt-root .dp-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+/* `border: none` first cancels the site's `.prose td { border: 1px }` rule so
+   only our bottom rule shows. */
+.gpt-root .dp-table td { border: none; border-bottom: 1px solid var(--border); padding: 0.28rem 0.2rem; }
+.gpt-root .dp-table td:first-child { color: var(--text-faint); }
+.gpt-root .dp-table td:last-child { text-align: right; color: var(--text); }
+.gpt-root .dp-table .dp-hl td { color: var(--accent); font-weight: 600; border: none; border-bottom: 2px solid var(--border-strong); }
+.gpt-root .dp-hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.8rem 0 0; }
+
+/* =========================================================================
+   softmax widget
+   ========================================================================= */
+.gpt-root .sm-rows { display: grid; gap: 0.5rem; margin: 1rem 0; }
+.gpt-root .sm-row { display: grid; grid-template-columns: 3rem 150px 2.5rem 1fr 3.5rem; align-items: center; gap: 0.7rem; }
+.gpt-root .sm-lab { color: var(--text); }
+.gpt-root .sm-logit { accent-color: var(--text-faint); }
+.gpt-root .sm-logit-v { color: var(--text-faint); font-size: 0.8rem; text-align: right; }
+.gpt-root .sm-bar-track { height: 20px; background: var(--bg-subtle); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+.gpt-root .sm-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--gpt-c2), var(--accent)); transition: width 0.3s var(--ease); border-radius: 5px 0 0 5px; }
+.gpt-root .sm-prob { color: var(--text-muted); font-size: 0.82rem; text-align: right; }
+
+/* ---- responsive ------------------------------------------------------- */
+@media (max-width: 620px) {
+  .gpt-root .dp-grid { grid-template-columns: 1fr; }
+  .gpt-root .sm-row { grid-template-columns: 2.6rem 1fr 2.4rem; }
+  .gpt-root .sm-row .sm-bar-track, .gpt-root .sm-row .sm-prob { grid-column: 1 / -1; }
+  .gpt-root .nt-bar { grid-template-columns: 4.5rem 1fr 2.6rem; }
+}
+
+/* =========================================================================
+   self-attention widget (Part 2)
+   ========================================================================= */
+.gpt-root .sa-toks { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+.gpt-root .sa-tok {
+  font-family: var(--font-mono); font-size: 0.9rem; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--text);
+  border-radius: var(--radius-sm); padding: 0.35rem 0.8rem; transition: all 0.16s var(--ease);
+}
+.gpt-root .sa-tok:hover { border-color: var(--accent); color: var(--accent); }
+.gpt-root .sa-tok[aria-selected="true"] { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+.gpt-root .sa-lead { font-size: 0.8rem; color: var(--text-muted); margin: 0.4rem 0 0.8rem; }
+.gpt-root .sa-lead b { color: var(--accent); font-weight: 600; }
+.gpt-root .sa-rows { display: grid; gap: 0.4rem; }
+.gpt-root .sa-row {
+  display: grid; grid-template-columns: 4rem 8.5rem 3.2rem 1fr 3rem; align-items: center;
+  gap: 0.6rem; padding: 0.25rem 0.4rem; border-radius: 6px;
+}
+.gpt-root .sa-row.is-self { background: var(--accent-soft); }
+.gpt-root .sa-row-lab { color: var(--text); font-size: 0.9rem; }
+.gpt-root .sa-row-k, .gpt-root .sa-row-s { color: var(--text-faint); font-size: 0.78rem; }
+.gpt-root .sa-bar-track { height: 18px; background: var(--bg-subtle); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+.gpt-root .sa-bar-fill { display: block; height: 100%; border-radius: 5px 0 0 5px;
+  background: linear-gradient(90deg, var(--gpt-c2), var(--accent)); transition: width 0.4s var(--ease); }
+.gpt-root .sa-row-w { color: var(--text-muted); font-size: 0.8rem; text-align: right; }
+.gpt-root .sa-out {
+  margin-top: 0.9rem; padding: 0.6rem 0.8rem; border-radius: var(--radius-sm);
+  background: var(--bg-subtle); border: 1px solid var(--border); font-size: 0.82rem; color: var(--text-muted);
+}
+.gpt-root .sa-out b { color: var(--accent); font-weight: 600; }
+
+/* =========================================================================
+   attention heatmap (cross-attention + multi-head, Part 2)
+   ========================================================================= */
+.gpt-root .heat-wrap { overflow-x: auto; }
+.gpt-root .heat { border-collapse: separate; border-spacing: 3px; margin: 0.5rem auto; }
+.gpt-root .heat th { border: none; background: none; padding: 0.2rem 0.4rem; }
+.gpt-root .heat-col, .gpt-root .heat-row { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+.gpt-root .heat-row { text-align: right; white-space: nowrap; }
+.gpt-root .heat-cell {
+  width: 60px; height: 42px; text-align: center; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--text); transition: transform 0.15s var(--ease); vertical-align: middle;
+}
+.gpt-root .heat-cell span { mix-blend-mode: normal; }
+.gpt-root tbody tr.dim { opacity: 0.28; transition: opacity 0.2s var(--ease); }
+.gpt-root tbody tr:not(.dim) .heat-cell { transform: scale(1.0); }
+.gpt-root .heat-axis { text-align: center; font-size: 0.72rem; color: var(--text-faint); margin: 0.6rem 0 0; }
+.gpt-root .heat-axis-r { color: var(--gpt-c2); } .gpt-root .heat-axis-c { color: var(--accent); }
+
+/* =========================================================================
+   positional-encoding heatmap (Part 2)
+   ========================================================================= */
+.gpt-root .pe-grid { display: grid; gap: 2px; margin: 0.6rem 0; }
+.gpt-root .pe-rowline { display: grid; grid-template-columns: repeat(var(--pe-cols), 1fr); gap: 2px; }
+.gpt-root .pe-cell { height: 12px; border-radius: 2px; }
+.gpt-root .pe-legend { display: flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; color: var(--text-faint); }
+.gpt-root .pe-sw { display: inline-block; width: 16px; height: 12px; border-radius: 2px; border: 1px solid var(--border); }
+.gpt-root .pe-sw:not(:first-child) { margin-left: 0.6rem; }
+.gpt-root .pe-sw0 { background: var(--bg-subtle); }
+
+/* =========================================================================
+   BPE tokenizer widget (Part 3)
+   ========================================================================= */
+.gpt-root .tk-count { color: var(--text-faint); font-size: 0.78rem; align-self: center; }
+.gpt-root .tk-words { display: grid; gap: 0.5rem; margin: 0.4rem 0 1rem; }
+.gpt-root .tk-word { display: flex; align-items: center; gap: 0.8rem; }
+.gpt-root .tk-freq { color: var(--text-faint); font-size: 0.76rem; width: 2.4rem; flex: none; }
+.gpt-root .tk-syms { display: flex; flex-wrap: wrap; gap: 4px; }
+.gpt-root .tk-sym {
+  font-family: var(--font-mono); font-size: 0.85rem; padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  background: var(--bg-subtle); color: var(--text); transition: all 0.25s var(--ease);
+}
+.gpt-root .tk-sym.just { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); transform: translateY(-2px); }
+.gpt-root .tk-merges { border-top: 1px solid var(--border); padding-top: 0.8rem; }
+.gpt-root .tk-merges-h { font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 0.4rem; }
+.gpt-root .tk-merges-list { margin: 0; padding-left: 1.4rem; display: grid; gap: 0.2rem; }
+.gpt-root .tk-merges-list li { font-size: 0.82rem; color: var(--text-muted); }
+.gpt-root .tk-rule b { color: var(--accent); }
+.gpt-root .tk-rn { color: var(--text-faint); font-size: 0.74rem; }
+.gpt-root .tk-empty { list-style: none; margin-left: -1.4rem; color: var(--text-faint); }
+
+/* =========================================================================
+   causal-mask widget (Part 3)
+   ========================================================================= */
+.gpt-root .cm-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; color: var(--text); }
+.gpt-root .cm-check { accent-color: var(--accent); width: 1rem; height: 1rem; }
+.gpt-root .cm-state { color: var(--accent); }
+.gpt-root .cm-grid { display: inline-grid; gap: 3px; margin: 0.6rem 0; overflow-x: auto; }
+.gpt-root .cm-row { display: flex; gap: 3px; }
+.gpt-root .cm-cell { width: 44px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+.gpt-root .cm-h { color: var(--text-muted); font-size: 0.74rem; }
+.gpt-root .cm-corner { width: 44px; }
+.gpt-root .cm-box { border-radius: var(--radius-sm); border: 1px solid var(--border); font-family: var(--font-mono); }
+.gpt-root .cm-box.open { background: color-mix(in srgb, var(--accent) 26%, transparent); color: var(--accent); }
+.gpt-root .cm-box.blocked { background: repeating-linear-gradient(45deg, transparent, transparent 4px, var(--border) 4px, var(--border) 5px); color: var(--text-faint); }
+
+/* =========================================================================
+   pipeline stepper (Part 3)
+   ========================================================================= */
+.gpt-root .pl-flow { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+.gpt-root .pl-stage {
+  width: 100%; max-width: 360px; text-align: center; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--text);
+  border-radius: var(--radius-sm); padding: 0.6rem 0.9rem; transition: all 0.16s var(--ease);
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+.gpt-root .pl-stage:hover { border-color: var(--accent); }
+.gpt-root .pl-stage.active { border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm); }
+.gpt-root .pl-stage.is-block { border-style: dashed; border-width: 2px; }
+.gpt-root .pl-stage-t { font-weight: 600; font-size: 0.9rem; }
+.gpt-root .pl-stage-sub { font-size: 0.68rem; color: var(--text-faint); }
+.gpt-root .pl-arrow { color: var(--text-faint); font-size: 0.9rem; line-height: 1; }
+.gpt-root .pl-detail { margin-top: 1rem; padding: 0.9rem 1.1rem; border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); background: var(--bg-subtle); }
+.gpt-root .pl-detail-t { font-weight: 600; color: var(--accent); margin-bottom: 0.3rem; }
+.gpt-root .pl-detail p { margin: 0; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+
+/* =========================================================================
+   sampling playground (Part 4)
+   ========================================================================= */
+.gpt-root .sp-context { font-size: 1rem; color: var(--text); margin: 0 0 0.4rem; }
+.gpt-root .sp-rows { display: grid; gap: 0.4rem; margin-top: 0.6rem; }
+.gpt-root .sp-row { display: grid; grid-template-columns: 5rem 1fr 3.4rem; align-items: center; gap: 0.7rem; transition: opacity 0.2s var(--ease); }
+.gpt-root .sp-row.cut { opacity: 0.32; }
+.gpt-root .sp-row.cut .sp-lab { text-decoration: line-through; }
+.gpt-root .sp-lab { color: var(--text); font-size: 0.9rem; }
+.gpt-root .sp-bar-track { height: 20px; background: var(--bg-subtle); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+.gpt-root .sp-bar-fill { display: block; height: 100%; border-radius: 5px 0 0 5px; background: linear-gradient(90deg, var(--gpt-c2), var(--accent)); transition: width 0.35s var(--ease); }
+.gpt-root .sp-prob { color: var(--text-muted); font-size: 0.8rem; text-align: right; }
+
+/* =========================================================================
+   training / cross-entropy widget (Part 4)
+   ========================================================================= */
+.gpt-root .tr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 0.6rem 0; align-items: start; }
+.gpt-root .tr-caption { font-size: 0.74rem; color: var(--text-faint); margin-bottom: 0.5rem; }
+.gpt-root .tr-caption b { color: var(--accent); }
+.gpt-root .tr-bars { display: grid; gap: 0.35rem; }
+.gpt-root .tr-bar { display: grid; grid-template-columns: 2.6rem 1fr 2.4rem; align-items: center; gap: 0.5rem; }
+.gpt-root .tr-bar-lab { font-size: 0.82rem; color: var(--text-muted); }
+.gpt-root .tr-bar.target .tr-bar-lab { color: var(--accent); font-weight: 700; }
+.gpt-root .tr-bar-track { height: 16px; background: var(--bg-subtle); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+.gpt-root .tr-bar-fill { display: block; height: 100%; background: var(--text-faint); transition: width 0.3s var(--ease); }
+.gpt-root .tr-bar.target .tr-bar-fill { background: linear-gradient(90deg, var(--gpt-c2), var(--accent)); }
+.gpt-root .tr-bar-p { font-size: 0.76rem; color: var(--text-muted); text-align: right; }
+.gpt-root .tr-curve { width: 100%; height: auto; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.gpt-root .tr-curve-line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.gpt-root .tr-curve-dot { fill: var(--accent); }
+.gpt-root .tr-loss { margin-top: 0.5rem; font-size: 0.82rem; color: var(--text-muted); }
+.gpt-root .tr-loss b { color: var(--accent); }
+
+/* =========================================================================
+   base-vs-chat widget (Part 5)
+   ========================================================================= */
+.gpt-root .bc-toggle { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.gpt-root .bc-mode {
+  font-family: var(--font-mono); font-size: 0.8rem; cursor: pointer; border: none;
+  background: var(--bg-elevated); color: var(--text-muted); padding: 0.5rem 0.9rem; transition: all 0.16s var(--ease);
+}
+.gpt-root .bc-mode + .bc-mode { border-left: 1px solid var(--border-strong); }
+.gpt-root .bc-mode:hover { color: var(--accent); }
+.gpt-root .bc-mode.is-on { background: var(--accent); color: var(--accent-contrast); }
+.gpt-root .bc-io { margin: 0.6rem 0 0; }
+.gpt-root .bc-prompt-echo { font-size: 0.85rem; color: var(--text-muted); padding: 0.5rem 0.7rem; background: var(--bg-subtle); border-radius: var(--radius-sm) var(--radius-sm) 0 0; border: 1px solid var(--border); }
+.gpt-root .bc-out {
+  white-space: pre-wrap; font-size: 0.92rem; line-height: 1.6; padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  border-left: 3px solid var(--border-strong); color: var(--text); transition: border-color 0.2s var(--ease);
+}
+.gpt-root .bc-out.chat { border-left-color: var(--accent); }
+.gpt-root .bc-out.base { border-left-color: var(--gpt-warn); color: var(--text-muted); font-style: italic; }
+
+@media (max-width: 620px) {
+  .gpt-root .sa-row { grid-template-columns: 3.2rem 3rem 1fr 2.6rem; }
+  .gpt-root .sa-row-k { display: none; }
+  .gpt-root .heat-cell { width: 44px; height: 36px; font-size: 0.66rem; }
+  .gpt-root .cm-cell { width: 34px; height: 30px; font-size: 0.7rem; }
+  .gpt-root .cm-corner { width: 34px; }
+  .gpt-root .tr-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gpt-root * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

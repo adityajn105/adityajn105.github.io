@@ -1,0 +1,13 @@
+---
+// Pretraining → SFT → RLHF stepper.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-stages></div>
+</figure>
+
+<script>
+  import { mountStages } from '../../scripts/gpt/chatgpt.js';
+  document.querySelectorAll('[data-gpt-stages]').forEach((el) => mountStages(el));
+</script>

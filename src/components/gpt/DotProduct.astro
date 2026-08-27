@@ -1,0 +1,14 @@
+---
+// Draggable dot-product / cosine-similarity playground.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-dp></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountDotProduct } from '../../scripts/gpt/basics.js';
+  document.querySelectorAll('[data-gpt-dp]').forEach((el) => mountDotProduct(el));
+</script>

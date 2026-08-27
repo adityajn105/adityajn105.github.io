@@ -1,0 +1,14 @@
+---
+// Scaled dot-product self-attention (Q·K → softmax → weighted sum of V).
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-sa></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountSelfAttention } from '../../scripts/gpt/attention.js';
+  document.querySelectorAll('[data-gpt-sa]').forEach((el) => mountSelfAttention(el));
+</script>

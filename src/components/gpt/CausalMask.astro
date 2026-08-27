@@ -1,0 +1,13 @@
+---
+// Causal attention mask toggle.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-cm></div>
+</figure>
+
+<script>
+  import { mountCausalMask } from '../../scripts/gpt/transformer.js';
+  document.querySelectorAll('[data-gpt-cm]').forEach((el) => mountCausalMask(el));
+</script>

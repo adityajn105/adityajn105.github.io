@@ -1,0 +1,13 @@
+---
+// Full decoder-only GPT pipeline — click a stage to expand.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-pl></div>
+</figure>
+
+<script>
+  import { mountPipeline } from '../../scripts/gpt/transformer.js';
+  document.querySelectorAll('[data-gpt-pl]').forEach((el) => mountPipeline(el));
+</script>

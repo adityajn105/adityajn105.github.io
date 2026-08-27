@@ -45,7 +45,7 @@ The Clipped Surrogate Objective is a drop-in replacement for the policy gradient
 
 For vanilla policy gradients (e.g., REINFORCE) --- which you should be familiar with, or familiarize yourself with before you read this --- the objective used to optimize the neural network looks like:
 
-$$ L^{PG}(\theta) = \hat E_t \biggl [ log \pi_\theta(s|a) \hat A_t \biggl ] $$
+$$ L^{PG}(\theta) = \hat E_t \biggl [ log \pi_\theta(a|s) \hat A_t \biggl ] $$
 
 This is the standard formula where the advantage (A hat) is often replaced with the discounted return. By taking a gradient ascent step on this loss with respect to the network parameters, you will incentivize the actions that led to higher reward. The vanilla policy gradient method uses the log probability of your action (log π(a | s)) to trace the impact of the actions, but you could imagine using another function to do this.
 
@@ -75,7 +75,7 @@ The Clipped Surrogate Objective is just a drop-in replacement you could use in t
 
 ### Generalized Advantage Estimation
 
-This is a way to calculate returns which reduces variances. The smoothing factor is governed by $\lambda$ which lies between 0 and 1. $\lambda = 1$ have higher accuracy but lower smoothness. PPO paper suggest $\lambda = 0.95$.
+This is a way to calculate returns which reduces variance. The smoothing factor is governed by $\lambda$ which lies between 0 and 1. $\lambda = 1$ is unbiased but has higher variance, while lower $\lambda$ trades some bias for lower variance. PPO paper suggest $\lambda = 0.95$.
 
 #### Algorithm
 
