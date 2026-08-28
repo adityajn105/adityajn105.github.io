@@ -31,6 +31,8 @@ public/                     # copied verbatim to site root
   ├── favicon.svg / .ico    # AJ monogram
   ├── robots.txt
   ├── img/profile.png       # hero portrait (optimized, 480px)
+  ├── img/*.png|*.gif       # project thumbnails — canonical copies, also served
+  │                         #   to projects.adityajain.me (see "Projects" below)
   ├── files/*.pdf           # résumés
   └── blogs/images/*        # blog images (referenced as /blogs/images/…)
 src/
@@ -38,13 +40,14 @@ src/
   ├── content/blog/*.md     # ← blog posts live here
   ├── data/                 # homepage content (edit these, not the markup)
   │   ├── profile.ts        # name, bio, socials, email, résumé, contact form
-  │   ├── projects.ts       # project cards
+  │   ├── projects.ts       # canonical project list (shared — see "Projects")
   │   ├── skills.ts         # skill groups
   │   └── experience.ts     # work experience + education
   ├── components/           # Nav, Footer, SEO, Analytics, Icon
   ├── layouts/              # BaseLayout, BlogLayout
   ├── pages/
   │   ├── index.astro       # homepage (pulls from src/data + recent blog posts)
+  │   ├── projects.json.ts  # build-time endpoint → /projects.json (shared feed)
   │   └── blogs/[...slug].astro   # renders each blog post
   └── styles/global.css     # design tokens + base styles
 astro.config.mjs            # site URL, integrations, markdown (build.format:'file')
@@ -90,10 +93,35 @@ astro.config.mjs            # site URL, integrations, markdown (build.format:'fi
 ## How to update homepage content
 
 Edit the files in `src/data/` — never hard-code content in `index.astro`.
-- Projects → `projects.ts` (`featured: true` makes a card span two columns).
+- Projects → `projects.ts` — the **canonical** list, shared with
+  projects.adityajain.me (see "Projects" below). Fields:
+  `title, description, href, image?, demo?, blog?, tags[]`. The homepage renders the
+  first 6 as a fixed 6-tile bento grid (keep the list length ≥ 6).
 - Skills → `skills.ts`.
 - Experience / education → `experience.ts`.
 - Bio, socials, email, résumé path → `profile.ts`.
+
+## Projects (single source of truth, shared with projects.adityajain.me)
+
+`src/data/projects.ts` is the **one** place project data lives, for **both** this
+site and **projects.adityajain.me** (the sibling repo `jackgriffin105.github.io`).
+
+- **This site** imports `projects` directly and shows the first 6 on the homepage.
+- **`src/pages/projects.json.ts`** publishes the full list as a build-time endpoint
+  at **`https://adityajain.me/projects.json`**. It rewrites local `/img/...` thumbnail
+  paths to absolute `https://adityajain.me/img/...` URLs (remote screenshot URLs pass
+  through untouched) so cross-site consumers get working images. GitHub Pages serves it
+  with `Access-Control-Allow-Origin: *`, so the cross-origin fetch just works.
+- **projects.adityajain.me** is a **pure consumer**: it `fetch()`es that feed at build
+  time and keeps **no** local project data or images. To change the project list or a
+  thumbnail, edit it **here** (`projects.ts` + `public/img/`), never there.
+
+**All project thumbnails live in this repo's `public/img/`.** Add new ones here.
+
+**Deploy order matters:** deploy **this** site first (so `/projects.json` is live), then
+projects.adityajain.me — its build **fails fast** if the feed is unreachable (by design;
+GitHub Pages then keeps its last good deploy). The consumer also rebuilds **weekly** via a
+`schedule` cron in its own `deploy.yml`, so it re-syncs even without a push here.
 
 ## Comments (Disqus)
 
