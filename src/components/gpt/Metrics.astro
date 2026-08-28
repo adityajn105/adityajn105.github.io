@@ -1,0 +1,14 @@
+---
+// Retrieval-metrics explorer — hit@k, precision@k, reciprocal rank.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-metrics></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountMetrics } from '../../scripts/gpt/eval.js';
+  document.querySelectorAll('[data-gpt-metrics]').forEach((el) => mountMetrics(el));
+</script>

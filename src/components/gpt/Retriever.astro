@@ -1,0 +1,15 @@
+---
+// Live TF-IDF retriever over a tiny fixed corpus — cosine ranking + the
+// "values" lexical-failure demo.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-retrieve></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountRetriever } from '../../scripts/gpt/rag.js';
+  document.querySelectorAll('[data-gpt-retrieve]').forEach((el) => mountRetriever(el));
+</script>

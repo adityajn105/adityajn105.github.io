@@ -1,0 +1,14 @@
+---
+// Live markdown chunker — heading-aware, size-bounded splitting.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-chunk></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountChunker } from '../../scripts/gpt/rag.js';
+  document.querySelectorAll('[data-gpt-chunk]').forEach((el) => mountChunker(el));
+</script>

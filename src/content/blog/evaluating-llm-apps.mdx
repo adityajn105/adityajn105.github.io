@@ -1,0 +1,150 @@
+---
+title: "Evaluating & Observing LLM Apps"
+description: "You can't improve what you can't measure. This post builds evaluation from scratch — a golden set, hit@k and MRR for retrieval, a groundedness check for answers — plus lightweight tracing to see where latency and cost go, then points at how the whole system ships. With interactive metric and trace playgrounds."
+pubDate: 2026-09-02
+tags: ["LLM", "Evaluation", "Observability", "RAG"]
+---
+
+import Metrics from '../../components/gpt/Metrics.astro';
+import TraceView from '../../components/gpt/TraceView.astro';
+import LlmSeriesNav from '../../components/gpt/LlmSeriesNav.astro';
+
+Across this series we built a [RAG system](/blogs/rag-from-scratch.html), gave it
+[tools](/blogs/agents-from-scratch.html), and [fine-tuned a model](/blogs/fine-tuning-llms.html)
+to run it. One question has been hanging over all of it: **is any of this actually good?** LLM
+apps are deceptively easy to demo and deceptively hard to trust — a system that answers three
+questions beautifully can quietly fail the fourth. This post is about *knowing*, not hoping:
+evaluation, observability, and finally putting the demo online.
+
+## Evaluate: turn "seems fine" into a number
+
+A RAG answer can go wrong in two independent places, so measure both.
+
+### Retrieval: did we fetch the right passages?
+
+If the relevant passage never makes it into the context, no model can save the answer — so
+retrieval is where evaluation starts. You need a **golden set**: questions paired with the source
+that *should* answer them. A dozen honest ones are worth more than a hundred careless ones.
+
+```python
+GOLDEN = [
+    ("scaled dot product attention softmax over keys", "gpt-2-attention"),
+    ("clipped surrogate objective probability ratio", "proximal-policy-optimization"),
+    ("word embedding vector meaning geometry", "word-embeddings"),
+    # ...
+]
+```
+
+Then two metrics do most of the work. **hit@k** asks a yes/no question: did the relevant source
+appear anywhere in the top *k*? **Reciprocal rank** is finer — it's `1 / (rank of the first
+relevant result)`, so ranking the right answer first (1.0) beats ranking it third (0.33). Average
+reciprocal rank across the golden set and you get **MRR**. Click rows to mark them relevant and
+slide the cutoff to feel how each metric responds:
+
+<Metrics>
+  <p class="figure__cap">Notice the personalities: <b>hit@k</b> only cares whether *something*
+  relevant is in the window; <b>precision@k</b> punishes padding the top with junk; <b>reciprocal
+  rank</b> rewards putting the best result <i>first</i>. Optimizing the wrong one is a classic
+  eval mistake.</p>
+</Metrics>
+
+Running this over the real blog scores **hit@3 = 100%** and **MRR = 0.79** — but the value isn't
+the headline number, it's the *misses* it surfaces. A couple of reinforcement-learning questions
+retrieved the wrong RL post first, because those posts share so much vocabulary. That's a
+concrete, actionable finding — exactly what eval is for, and invisible if you'd only eyeballed a
+few queries.
+
+### Answers: is the response grounded in the context?
+
+The other failure is the model *having* the right context and still drifting from it. The
+from-scratch proxy for **groundedness** is lexical: what fraction of the answer's content words
+actually appear in the retrieved passages?
+
+```python
+def grounded_score(answer, context):
+    ctx = set(tokenize(context))
+    words = [w for w in tokenize(answer) if w not in STOPWORDS]
+    return sum(w in ctx for w in words) / len(words)   # 1.0 = fully supported
+```
+
+A low score is a hallucination alarm. The real tools ([Ragas](https://docs.ragas.io/)) replace
+the word-overlap heuristic with an LLM judge that checks whether each claim is *entailed* by the
+context — but the shape is identical, and building the crude version first tells you exactly what
+the fancy version is approximating.
+
+## Observe: see where time and cost go
+
+Evaluation tells you if the output is good; **observability** tells you what happened to produce
+it. A single call is a little pipeline — embed the query, search, generate — and tracing wraps
+each step so you can see its latency (and, for the LLM step, its tokens). The whole tracer is ~40
+lines:
+
+```python
+with tracer.span("retrieve", k=4):
+    hits = rag.query(question)
+with tracer.span("generate", model="gpt-4o-mini"):
+    answer = generate(question, hits)
+tracer.report()     # a waterfall with per-step timings
+```
+
+Flip the generator and watch where the wall-clock actually goes:
+
+<TraceView>
+  <p class="figure__cap">Retrieval is essentially free. The moment a real model enters, the
+  <b>generate</b> step dominates completely — which is why latency and cost dashboards obsess over
+  tokens, not vector math. Hosted tools (LangSmith, LangFuse, Arize Phoenix) are this idea plus
+  storage, nesting, and a UI.</p>
+</TraceView>
+
+## Ship: put it online
+
+A system that only runs in your terminal convinces no one. So I didn't ship this as a monolith — I
+shipped it as an **embeddable assistant**: a tiny chat widget you drop on any page with one script
+tag, talking to a small streaming API behind it. It's **live at
+[chat.adityajain.me](https://chat.adityajain.me)** (and in the corner of my home page) — go ask it
+what I've written about.
+
+That's the payoff of building on a clean, dependency-light core the whole way through: the thing
+that ships is the same thing you understood from scratch — retrieval, a ReAct agent, and tools,
+wired to the web. **[Part 5](/blogs/building-a-portfolio-chatbot.html) builds the whole thing, step
+by step**, and notes the production tool you'd swap in at each stage.
+
+## From scratch → framework
+
+| Concern | We built (from scratch) | Framework / tool |
+|---------|-------------------------|------------------|
+| Retrieval metrics | hit@k, MRR by hand | Ragas, `trec_eval` |
+| Answer quality | lexical groundedness | Ragas (LLM-judge faithfulness) |
+| Tracing | a 40-line `Tracer` | LangSmith, LangFuse, Arize Phoenix |
+| Serving the demo | FastAPI + SSE streaming | Render / managed host (see [Part 5](/blogs/building-a-portfolio-chatbot.html)) |
+
+## The series, in one line each
+
+- **[RAG](/blogs/rag-from-scratch.html)** — retrieve, then generate; TF-IDF, cosine, chunking.
+- **[Agents](/blogs/agents-from-scratch.html)** — a loop around an LLM plus a tool protocol (ReAct).
+- **[Fine-tuning](/blogs/fine-tuning-llms.html)** — LoRA's low-rank adapters, quantization, vLLM.
+- **Eval & observability (this post)** — measure retrieval and grounding; trace latency; ship it.
+- **[Building the chatbot](/blogs/building-a-portfolio-chatbot.html)** — assemble it all into a live, embeddable assistant.
+
+## Key takeaways
+
+- **Measure retrieval and answers separately** — a golden set + hit@k/MRR for the first,
+  groundedness for the second. Numbers turn "seems fine" into progress you can track.
+- **Eval's real value is the misses it surfaces** — like RL posts stealing each other's top spot.
+- **Tracing shows the generator dominates latency and cost**; retrieval is basically free.
+- **Ship it.** An embeddable assistant turns the project into something people can actually use —
+  and it's the same clean core you built by hand. [Part 5](/blogs/building-a-portfolio-chatbot.html)
+  wires it all together.
+
+## Go deeper
+
+- [Ragas](https://docs.ragas.io/) — RAG evaluation (faithfulness, context precision/recall).
+- [Arize Phoenix](https://docs.arize.com/phoenix) · [LangSmith](https://docs.smith.langchain.com/) · [LangFuse](https://langfuse.com/) — tracing & observability.
+- [FastAPI](https://fastapi.tiangolo.com/) + [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) — how the live demo streams its answers.
+
+*You've now built — from scratch, then with the real tools — retrieval, agents, fine-tuning, and
+evaluation. The last step is to snap them together into something people can actually use:
+[Part 5](/blogs/building-a-portfolio-chatbot.html) builds the live chatbot on this site, piece by
+piece.*
+
+<LlmSeriesNav current={4} position="bottom" />

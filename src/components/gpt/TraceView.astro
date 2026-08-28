@@ -1,0 +1,14 @@
+---
+// Latency trace waterfall — where wall-clock goes across the pipeline.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-trace></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountTrace } from '../../scripts/gpt/eval.js';
+  document.querySelectorAll('[data-gpt-trace]').forEach((el) => mountTrace(el));
+</script>

@@ -1,0 +1,175 @@
+---
+title: "How AI Agents Actually Work: ReAct from scratch"
+description: "An 'agent' is a while-loop around an LLM plus a text protocol for calling tools. This post builds the ReAct pattern — Reason, Act, Observe — by hand with no framework, so you can see there's no magic, then shows what LangGraph and MCP add on top. With an interactive trace you can step through."
+pubDate: 2026-08-31
+tags: ["LLM", "Agents", "ReAct", "Tools"]
+---
+
+import ReactTrace from '../../components/gpt/ReactTrace.astro';
+import LlmSeriesNav from '../../components/gpt/LlmSeriesNav.astro';
+
+In the [last post](/blogs/rag-from-scratch.html) we gave a language model the ability to *look
+things up*. But retrieval is a single, fixed move: search once, then answer. Real questions
+often need more — *look this up, then calculate with what you found, and if the first search
+comes up empty, try a different one.* That requires the model to **decide what to do next**,
+act, see the result, and decide again. That loop is what people mean by an **AI agent**.
+
+Agents get talked about like they're mysterious autonomous beings. They aren't. Strip away the
+branding and an agent is a **`while` loop around an LLM** plus a **text protocol for calling
+tools**. This post builds that loop from scratch — no LangChain, no framework — so the "magic"
+disappears entirely. Then we'll look at what LangGraph and MCP actually add. As with the rest of
+this series, the toy version runs live here and the real version runs in the
+[companion project](/blogs/rag-from-scratch.html).
+
+## The core idea: Reason, Act, Observe
+
+The pattern almost everything is built on is **ReAct** — *Reason + Act*. It's a stunningly simple
+trick. Instead of asking the model to answer directly (where it has to guess when it doesn't
+know), you prompt it to **think out loud** and, whenever it needs information, to emit an
+**action** rather than an answer. You run that action, paste the **observation** back into the
+prompt, and let it think again:
+
+> **Thought** → **Action** → **Observation** → Thought → Action → Observation → … → **Final Answer**
+
+That's the whole algorithm. The model reasons; when it hits the edge of what it knows, it calls
+a tool; the tool's result grounds the next round of reasoning. Step through some real traces —
+pick a question and reveal it one move at a time:
+
+<ReactTrace>
+  <p class="figure__cap">Watch the <b>Reason → Act → Observe</b> strip at the top light up as
+  each move happens. The middle question composes <b>two different tools</b>; the last one shows
+  the agent refusing to invent an answer when the search comes up empty — grounding, again.</p>
+</ReactTrace>
+
+## Tools: the things an agent can do
+
+A tool is deliberately dumb: a **name**, a **description** the model reads to decide when to use
+it, and a **function** from a string input to a string result. That's the entire contract. The
+model never runs code — it emits *text* naming a tool, and we dispatch.
+
+```python
+@dataclass
+class Tool:
+    name: str
+    description: str
+    run: Callable[[str], str]
+
+# the retriever from the last post, wrapped as a tool the agent can call
+def make_search_tool(rag, k=3):
+    def _search(query):
+        hits = rag.query(query, k=k)
+        return " || ".join(f"[{h.meta['source']}] {first_sentence(h.meta['text'])}"
+                            for h in hits) or "No results found."
+    return Tool("search_blog", "Search the blog for a topic. Input: a search query.", _search)
+```
+
+The `description` matters more than it looks: it's the only thing the model knows about the tool,
+so it's how the model decides *whether and when* to call it. Vague descriptions produce an agent
+that reaches for the wrong tool.
+
+## The loop, from scratch
+
+Now the engine. We build a prompt that shows the model the tools and the exact format, call the
+model, parse out its chosen action, run the tool, and append the observation to a **scratchpad**
+that grows each turn. Repeat until the model writes `Final Answer` — or we hit a step limit so a
+confused agent can't loop forever.
+
+```python
+def run(self, question):
+    scratchpad, steps = "", []
+    for _ in range(self.max_steps):
+        prompt = PROMPT_TEMPLATE.format(tools=render_tools(self.tools),
+                                        question=question, scratchpad=scratchpad)
+        step = parse(self.policy(prompt))           # model's next Thought + Action
+
+        if step.action == "__final__":              # it's ready to answer
+            return Result(answer=step.action_input, steps=steps)
+
+        tool = self.tools.get(step.action)           # dispatch the tool by name
+        step.observation = tool.run(step.action_input) if tool \
+            else f"Unknown tool {step.action!r}."
+        steps.append(step)
+        scratchpad += f"Thought: {step.thought}\nAction: {step.action}\n" \
+                      f"Action Input: {step.action_input}\nObservation: {step.observation}\n"
+
+    return Result(answer="(stopped: step limit reached)", stopped="max_steps")
+```
+
+Two details do a lot of quiet work:
+
+- **The scratchpad is the memory.** The LLM itself is stateless — every turn we resend the whole
+  running transcript so the model can see what it already tried. "State" in an agent is just
+  this growing string.
+- **We stop the model before it writes its own `Observation`.** The model would happily
+  *hallucinate* the tool result if we let it. So the policy halts generation at `Observation:`,
+  and *we* fill in the real result. That single boundary is what separates a grounded agent from
+  a creative-writing exercise.
+
+The policy — the thing that produces the next Thought/Action — is pluggable, exactly like the
+generator in the RAG post: a real LLM in production, a scripted policy for deterministic tests.
+
+## Where the hand-rolled version strains
+
+Build this and you immediately feel the rough edges — which is the best possible motivation for
+what frameworks add:
+
+- **Parsing is brittle.** The model sometimes formats the action slightly differently and the
+  regex misses. Real systems use structured/JSON tool-calling instead of scraping free text.
+- **No branching or memory beyond the scratchpad.** One linear loop can't easily fan out to
+  parallel tools, retry a failed branch, or pause for human approval.
+- **No durability or observability.** If step 4 of 6 crashes, you start over, and you can't see
+  where time and tokens went.
+
+## From scratch → framework: LangGraph and MCP
+
+The same shape, hardened:
+
+| Concern | We built (from scratch) | Framework / standard |
+|---------|-------------------------|----------------------|
+| Tool calling | parse text with regex | native JSON tool-calling APIs |
+| The loop | a `for` loop + scratchpad | **LangGraph** state graph |
+| Branching / retries / human-in-the-loop | — | LangGraph conditional edges + checkpoints |
+| Sharing tools across apps | hand-wired per app | **MCP** (Model Context Protocol) |
+| Tracing tokens & steps | `print()` | LangSmith / LangFuse |
+
+First, untangle the names, because they get conflated constantly. **LangChain** is the
+orchestration *library* — chains, prompt templates, retrievers, memory: the RAG plumbing from the
+[last post](/blogs/rag-from-scratch.html). **LangGraph** is a separate runtime from the same team
+for the *agent* side — stateful, branching, resumable loops. Rule of thumb: reach for LangChain to
+compose a linear chain, and for LangGraph when the flow loops and branches, like the
+Reason/Act/Observe cycle we just built.
+
+**LangGraph** reframes the loop as a **state graph**: nodes are steps (call the model, run a
+tool), edges decide what happens next, and a shared state object replaces the scratchpad. Because
+it's a graph, you get things a bare loop can't offer for free — conditional branches, cycles with
+proper checkpoints, pausing to ask a human, and resuming after a crash. It's the same
+Reason/Act/Observe idea with real control flow around it.
+
+**MCP** (the Model Context Protocol) standardizes the *tool* side. Instead of hand-wiring
+`search_blog` into one app, you expose it behind MCP once and **any** MCP-aware client — Claude,
+an IDE, another agent — can discover and call it. Think of it as USB-C for tools: one plug,
+many hosts. Our `search_blog` becomes reusable infrastructure instead of glue code.
+
+## Key takeaways
+
+- **An agent is a loop, not a mind.** Reason → Act → Observe, repeated, with a text protocol for
+  calling tools. You just built it.
+- **Tools are a three-line contract** — name, description, function — and the *description* is
+  how the model chooses among them.
+- **The scratchpad is the memory**, and the model must be *stopped* before it writes its own
+  observation, or it will hallucinate the tool's result.
+- **Frameworks harden, they don't reinvent.** LangGraph turns the loop into a resumable state
+  graph; MCP turns your tools into shared infrastructure. Both are the same core you now
+  understand from the inside.
+
+## Go deeper
+
+- The ReAct paper — [Yao et al., 2022](https://arxiv.org/abs/2210.03629).
+- [LangGraph docs](https://langchain-ai.github.io/langgraph/) — state-graph agents.
+- [Model Context Protocol](https://modelcontextprotocol.io/) — the open standard for tools.
+- [Toolformer](https://arxiv.org/abs/2302.04761) — teaching models to call tools by themselves.
+
+*Next in the series: making the model itself better at your domain — **fine-tuning** a small
+open model with LoRA, quantizing it, and serving it — then wiring it back in as the generator.*
+
+<LlmSeriesNav current={2} position="bottom" />

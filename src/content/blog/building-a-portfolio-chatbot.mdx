@@ -1,0 +1,401 @@
+---
+title: "Building the Chatbot on This Site: from the series to a live assistant"
+description: "The capstone: a full, file-by-file walkthrough of the assistant on this site — crawler, from-scratch RAG, a ReAct agent, tools over MCP, SSE streaming, an embeddable Shadow-DOM widget, and the safety-and-cost work tutorials skip. Every step points at the real code on GitHub and the production tool you'd swap in. It's live — go talk to it."
+pubDate: 2026-09-03
+tags: ["LLM", "RAG", "Agents", "Production"]
+---
+
+import LlmStackMap from '../../components/gpt/LlmStackMap.astro';
+import LlmSeriesNav from '../../components/gpt/LlmSeriesNav.astro';
+
+Every post so far built one piece in isolation: [retrieval](/blogs/rag-from-scratch.html),
+[a reasoning loop](/blogs/agents-from-scratch.html), [a fine-tuned model](/blogs/fine-tuning-llms.html),
+[a way to measure it](/blogs/evaluating-llm-apps.html). This post assembles them into a single,
+running thing — the assistant that lives in the corner of this site. It answers questions about me
+and my work, grounded in my actual pages, and it costs essentially nothing to run.
+
+You can go use it right now: **[chat.adityajain.me](https://chat.adityajain.me)**, or click the
+bubble in the corner of my [home page](/) — that's the one page I've embedded the widget on. And
+the entire thing is open source: **[github.com/adityajn105/portfolio-chatbot](https://github.com/adityajn105/portfolio-chatbot)**.
+This post walks every file in that repo, what it does, and how you'd replace it with a production
+tool.
+
+The satisfying part is that there's almost nothing new to learn here. The chatbot is the series'
+pieces snapped together, plus the un-glamorous production work — safety, cost, streaming — that no
+tutorial shows you. Here's the whole machine; click through it, then we'll walk each stage:
+
+<LlmStackMap>
+  <p class="figure__cap">The request flows left to right: the <b>widget</b> posts your question to
+  the <b>API</b>, which drives the <b>agent</b>, which calls <b>tools</b> over MCP —
+  <b>retrieval</b> grounds the answer, and <b>Gemini</b> does the generation. Each stage is a
+  piece this series built by hand; each has a production tool you'd swap in.</p>
+</LlmStackMap>
+
+## The goal, and the constraints that shaped everything
+
+I wanted an assistant that (1) is **embeddable on any page** with a single script tag, (2) answers
+**only** from my own site so it can't confidently make things up about me, and (3) runs on a
+**free tier** — no GPU, 512 MB of RAM, and a bill I never have to think about. That last constraint
+did most of the design work: it ruled out loading any model locally, which is why generation *and*
+embeddings both go to a hosted API. Everything below is a consequence of "make it good, make it
+free."
+
+### The repo at a glance
+
+The whole system is about a dozen small files. Here's the map before we walk them:
+
+| File | What it is |
+|------|------------|
+| [`backend/crawl.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/crawl.py) | Stdlib crawler: sitemap → readable markdown snapshot |
+| [`backend/rag.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/rag.py) | The whole RAG pipeline — chunk, embed, store, retrieve, generate |
+| [`backend/agent.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/agent.py) | The ReAct loop, the tools, and the Gemini "brain" |
+| [`backend/mcp_client.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_client.py) | A from-scratch MCP (JSON-RPC/stdio) client + in-process twins |
+| [`backend/mcp_server/blog_server.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_server/blog_server.py) | FastMCP server exposing `search_site` |
+| [`backend/mcp_server/contact_server.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_server/contact_server.py) | FastMCP server exposing `send_message` |
+| [`backend/contact.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/contact.py) | The `send_message` capability (emails me via Formspree) |
+| [`backend/app.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/app.py) | FastAPI app: the `/chat` SSE endpoint + all the abuse guards |
+| [`web/widget.js`](https://github.com/adityajn105/portfolio-chatbot/blob/main/web/widget.js) | The embeddable, zero-dependency Shadow-DOM chat bubble |
+| [`render.yaml`](https://github.com/adityajn105/portfolio-chatbot/blob/main/render.yaml) · [`.github/workflows/crawl.yml`](https://github.com/adityajn105/portfolio-chatbot/blob/main/.github/workflows/crawl.yml) | Deploy config + the CI job that keeps the corpus fresh |
+
+## Step 1 · Crawl the site into a corpus
+
+Before you can retrieve anything, you need text to retrieve *from*. The corpus is my two sites
+(`adityajain.me` and `projects.adityajain.me`), turned into plain markdown.
+
+[`backend/crawl.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/crawl.py)
+is a **stdlib-only** crawler — `urllib` + `html.parser` + `xml`, no dependencies. It reads each
+site's sitemap, fetches every page, strips the HTML down to readable prose (dropping nav, footer,
+scripts, comment widgets), and writes one markdown file per page with the title and canonical URL
+in the frontmatter — so retrieval later can cite the *real* page:
+
+```python
+def save_snapshot(pages, out_dir):
+    for page in pages:
+        body = f'---\ntitle: "{page.title}"\nurl: {page.url}\n---\n\n{page.text}\n'
+        with open(os.path.join(out_dir, f"{slug_for(page.url)}.md"), "w") as fh:
+            fh.write(body)
+```
+
+The deliberate design choice: I **snapshot to disk** rather than crawl at app boot. The deployed
+service then starts fast and offline, and the index is reproducible. A CI job re-crawls on a
+schedule (Step 8).
+
+> **In the repo →** [`crawl.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/crawl.py):
+> `sitemap_urls()` walks the sitemap index, `_Extractor(HTMLParser)` pulls prose, `slug_for()`
+> makes a stable filename per URL.
+>
+> **Real-world swap:** a managed crawler/loader like **Firecrawl**, **Scrapy**, or **LangChain /
+> LlamaIndex document loaders**, feeding a scheduled ingestion pipeline (Airflow/cron) instead of a
+> hand-rolled sitemap walk.
+
+## Step 2 · Chunk, embed, retrieve — the RAG core
+
+This is [Part 1](/blogs/rag-from-scratch.html) made real, and it all lives in one readable file:
+[`backend/rag.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/rag.py),
+which you can read top-to-bottom as the data flows: `chunk → embed → store → retrieve → generate`.
+
+**Chunking.** `chunk_markdown()` is the same heading-aware splitter from Part 1 — it walks the
+lines, starts a new section at every markdown heading, and greedily packs paragraphs into pieces
+under a size budget, carrying the nearest heading along for citations.
+
+**Embedding — the one real production change.** The file ships *four* embedders behind one
+`fit`/`encode` interface: `TfidfEmbedder` (from scratch, the teaching version), plus semantic ones.
+The deploy uses `GeminiEmbedder` — the **Gemini Embedding API** (`gemini-embedding-2`, 768-dim) —
+precisely because an API embedder keeps **no model weights in RAM**, which is what makes it fit the
+512 MB box:
+
+```python
+def make_embedder(kind=None):
+    kind = (kind or os.environ.get("EMBEDDER", "gemini")).lower()
+    if kind in ("gemini", "api"):     return GeminiEmbedder()      # API — no local model
+    if kind in ("fastembed", "onnx"): return FastEmbedEmbedder()   # local ONNX
+    if kind in ("st",):               return SentenceTransformerEmbedder()
+    return TfidfEmbedder()            # lexical, zero deps
+```
+
+Because every embedder exposes the same interface, swapping backends never touches the rest of the
+pipeline — exactly the seam Part 1 designed on purpose.
+
+**The store & retrieval.** `VectorStore` is a NumPy matrix of unit vectors plus parallel metadata;
+`search()` is one matrix–vector product then a top-k. At a few dozen pages that isn't a compromise,
+it's correct — an ANN index would be pure overhead.
+
+**A cost trick worth stealing.** Query embeddings are cheap (one per question), but embedding the
+*whole corpus* on every cold boot would blow the free-tier rate limit. So document vectors are
+**cached to disk by content hash**, and CI precomputes + commits that cache
+([`precompute_embeddings.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/precompute_embeddings.py)),
+so Render boots on a cache hit and never re-embeds.
+
+> **In the repo →** [`rag.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/rag.py):
+> `chunk_markdown()`, the embedder classes, `VectorStore.search()`, and `build_prompt()` (the
+> grounding prompt that forces "answer only from the context").
+>
+> **Real-world swap:** **LangChain** loaders/splitters up front; **Milvus, Qdrant, or pgvector**
+> for the store once you outgrow one machine; a managed embeddings endpoint. The `VectorStore.add`
+> / `.search` seam is where a vector DB drops in without touching the agent.
+
+## Step 3 · The ReAct agent
+
+Retrieval alone is one fixed move: search once, answer. To handle "search, and if that's weak try a
+different query — or just answer a general ML question directly," the model has to *decide what to
+do next*. That's the [Part 2](/blogs/agents-from-scratch.html) **ReAct loop**, living in
+[`backend/agent.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/agent.py).
+
+`ReActAgent.run_iter()` is the engine, and it `yield`s an `Event` at every stage (thinking → model
+→ tool_call → observation → final) so the UI can narrate the reasoning live. The crucial detail
+from Part 2 is intact — the model is **stopped before it can write its own `Observation:`**, so
+tool results are always real:
+
+```python
+class GeminiPolicy:
+    def __call__(self, prompt):
+        cfg = types.GenerateContentConfig(
+            temperature=0.1,
+            stop_sequences=["\nObservation:"],   # hand control back after the action
+        )
+        resp = self.client.models.generate_content(
+            model=self.active_model, contents=prompt, config=cfg)
+        return resp.text or ""
+```
+
+The "brain" is pluggable (`choose_policy()` picks Gemini → OpenAI → a local Qwen model → a scripted
+fallback). The deploy uses `GeminiPolicy`, which adds the production hardening: a short per-attempt
+timeout, retries with exponential backoff for transient 503/429s, and a **sticky fallback** — if
+the primary `gemini-3.5-flash` hits its quota mid-session, it permanently drops to the lighter
+`-lite` tier (which has a separate allowance) for the rest of that process.
+
+> **In the repo →** [`agent.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/agent.py):
+> `ReActAgent.run_iter()` (the loop), `_parse()` (scrape Thought/Action/Final out of a turn),
+> `GeminiPolicy` (the brain), and `AGENTIC_RAG_PROMPT` (the scoped, injection-resistant prompt —
+> see Step 7).
+>
+> **Real-world swap:** **LangGraph** — the same loop as a resumable state graph, with branching,
+> retries, and human-in-the-loop for free, plus structured/JSON tool-calling instead of scraping
+> free text.
+
+## Step 4 · Tools over MCP
+
+The agent gets exactly two tools, and each is defined as the Part 2 contract — a name, a
+description the model reads, and a function. But here I reached for the production standard rather
+than gluing them in: **MCP (Model Context Protocol)**.
+
+- **`search_site`** wraps the Step 2 retriever — how the bot grounds every factual answer. It's
+  served by [`mcp_server/blog_server.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_server/blog_server.py).
+- **`send_message`** lets a visitor leave me a note; it emails me via Formspree
+  ([`contact.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/contact.py),
+  served by [`contact_server.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_server/contact_server.py)).
+  So the assistant can not only answer *about* me — it can **reach** me.
+
+The `@mcp.tool` decorator is all FastMCP needs to expose a function:
+
+```python
+mcp = FastMCP("blog-search")
+
+@mcp.tool
+def search_site(query: str, k: int = 3, min_score: float = 0.25) -> str:
+    """Search Aditya's website and return the most relevant passages."""
+    return search_site_text(_RAG, query, k=k, min_score=min_score)
+```
+
+The client side is the fun part:
+[`mcp_client.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_client.py)
+is a **from-scratch MCP client** — MCP over stdio is just JSON-RPC 2.0, one JSON object per line, so
+`MCPStdioClient` is ~70 lines: launch the server process, do the three-message handshake, call
+tools. There's no magic.
+
+There's one production nuance the free tier forced. Running three interpreters (parent + two MCP
+subprocesses) OOMs at 512 MB, so `mcp_client.py` also ships **in-process twins**
+(`InProcessMCPClient`) that speak the *exact same* JSON-RPC `tools/call` contract to an in-memory
+handler — no subprocess. The deploy sets `MCP_TRANSPORT=inprocess`; flip it to `process` and the
+identical agent talks to real, separate MCP server processes. Same capability, different transport
+— which is the whole point of a protocol.
+
+> **In the repo →** [`mcp_client.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/mcp_client.py):
+> `MCPStdioClient` (the real stdio client), `InProcessMCPClient` (the 512 MB twin), and
+> `make_mcp_search_tool` / `make_mcp_contact_tool` that wrap either one as an agent `Tool`.
+>
+> **Real-world swap:** MCP *is* the production standard — keep it. In a bigger system you'd run the
+> MCP servers as their own long-lived services (the `process` transport), and any MCP-aware host
+> (Claude, an IDE, another agent) could reuse `search_site` without touching this app.
+
+## Step 5 · Serving it
+
+The design is deliberately lean and decoupled:
+[`backend/app.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/app.py) is a
+small **FastAPI** service whose one interesting route, `/chat`, **streams Server-Sent Events**.
+Streaming is what makes the widget feel alive — it narrates *searching… → thinking → answer*
+instead of freezing on a spinner. The `_stream()` generator just translates each agent `Event` into
+an SSE line:
+
+```python
+def _stream(question, history):
+    for ev in STATE.agent.run_iter(_with_history(question, history)):
+        if ev.kind == "tool_call":
+            yield _sse("tool_call", tool=ev.data["tool"], input=ev.data["input"])
+        elif ev.kind == "final":
+            yield _sse("final", answer=ev.data["answer"], tools_used=...)
+        # ...thinking / model / observation / error similarly
+```
+
+On boot, `app.py` loads the committed crawl snapshot (no boot crawl) and builds the agent. It's a
+deliberately thin shell — almost all the work lives in the modules from Steps 1–4.
+
+> **In the repo →** [`app.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/app.py):
+> `@app.post("/chat")`, `_stream()`, `_sse()`, plus `/health` and `/pages` (the widget uses `/pages`
+> to hyperlink citations).
+>
+> **Real-world swap:** any managed host with autoscaling; **LangServe** if you want the chain wired
+> to HTTP for you. The FastAPI + SSE shape itself is already what the grown-ups use.
+
+## Step 6 · The embeddable widget
+
+The front end is
+[`web/widget.js`](https://github.com/adityajn105/portfolio-chatbot/blob/main/web/widget.js) — a
+**zero-dependency, Shadow-DOM** chat bubble. The Shadow DOM matters: it isolates the widget's styles
+from whatever site it's dropped into, so nothing leaks either way. Embedding it is one line:
+
+```html
+<script src="https://chat.adityajain.me/widget.js"
+        data-api="https://chat.adityajain.me"
+        data-title="Ask about Aditya" data-accent="#f0b429" defer></script>
+```
+
+The script reads its own config off the `<script>` tag, attaches a shadow root, opens the `/chat`
+SSE connection over `fetch`, shows a subtle status while the agent works, and renders the final
+grounded answer — hyperlinking the `[source]` citations back to real pages via `/pages`. On this
+site I've dropped that tag on just the [home page](/) for now — but the same one line would light it
+up on every page, or on any other site entirely.
+
+> **In the repo →** [`widget.js`](https://github.com/adityajn105/portfolio-chatbot/blob/main/web/widget.js):
+> `pcbWidget()` (mount + Shadow DOM), `streamChat()` (the SSE-over-fetch reader), `render()`
+> (linkify citations). All markup + CSS are kept as strings so it's a single file.
+>
+> **Real-world swap:** a bundled web component or npm-published widget with a design system; the
+> Shadow-DOM isolation is already the production-grade part.
+
+## Step 7 · Making it safe and cheap
+
+This is the step tutorials skip, and it's the one that matters once the endpoint is public and
+backed by a *billed* API key. Left unguarded, a single script could run up a bill or turn my
+assistant into a free general-purpose LLM. The defence is split across two files.
+
+**In [`agent.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/agent.py) — a
+scoped, injection-resistant prompt.** `AGENTIC_RAG_PROMPT` tells the agent it covers only (a) me and
+(b) the ML topics my blog is about, and to *decline* everything else — trivia, "write my essay,"
+"ignore your instructions and…". It treats the visitor's message as a question to answer, never as
+instructions that change its role, and it must call `search_site` for any fact about me rather than
+guessing.
+
+**In [`app.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/app.py) — rate
+limits, size caps, and an origin allowlist.** A stdlib, in-memory sliding-window limiter caps
+requests per IP per minute and per day, plus a **global daily ceiling** that acts as a hard spend
+cap for everyone combined:
+
+```python
+def check(self, ip):
+    now = time.time()
+    if self.global_per_day and len(self._global) >= self.global_per_day:
+        return "This assistant has reached its daily limit for everyone — try again tomorrow."
+    if self.per_min and recent(ip, now - 60) >= self.per_min:
+        return "You're sending questions a bit too fast — give it a few seconds."
+    record(ip, now)
+    return None    # allowed
+```
+
+The `/chat` handler runs the cheap guards first — origin check, then question-size cap, then the
+rate limiter — before it ever spends a token. None of it is fancy; all of it is the difference
+between a demo and something you can leave running unattended on the public internet.
+
+> **In the repo →** [`app.py`](https://github.com/adityajn105/portfolio-chatbot/blob/main/backend/app.py):
+> `_RateLimiter`, `_client_ip()` (reads `X-Forwarded-For` behind Render's proxy), `_origin_allowed()`,
+> and the guard chain at the top of `chat()`. Plus `GeminiPolicy`'s timeout + quota fallback in
+> `agent.py`.
+>
+> **Real-world swap:** rate limiting at the API gateway/WAF (or Redis-backed for multiple
+> instances), and a dedicated guardrail layer (e.g. **NeMo Guardrails**, Llama Guard, or a prompt-
+> injection classifier) instead of prompt rules alone.
+
+## Step 8 · Deploy, and keep it fresh
+
+Two small files run the whole operation.
+[`render.yaml`](https://github.com/adityajn105/portfolio-chatbot/blob/main/render.yaml) is the
+Render blueprint: free plan, `uvicorn app:app`, `/health` check, and the env that picks
+`gemini-3.5-flash` for generation, `gemini` for embeddings, and `inprocess` MCP. The one tax of the
+free tier is a **cold start** — after idling, the first request wakes the box, so it's slow, then
+fine (the widget's subtitle even warns "~1 min to wake up").
+
+[`.github/workflows/crawl.yml`](https://github.com/adityajn105/portfolio-chatbot/blob/main/.github/workflows/crawl.yml)
+is what keeps the knowledge current: on a weekly schedule (and on push) it re-runs `crawl.py`,
+precomputes the embedding cache, and commits both back — which triggers a redeploy on a fast
+cache-hit boot. So the bot's knowledge tracks my site with zero manual steps.
+
+> **Real-world swap:** managed autoscaling (no cold starts), secrets in a real secret manager, and
+> a scheduled ingestion/re-embedding pipeline pointed at your vector DB instead of a git-committed
+> cache.
+
+## Does it actually work?
+
+Yes — measured, not hoped, using [Part 4](/blogs/evaluating-llm-apps.html)'s eval on the live
+corpus: a small golden set, **hit@k / MRR** for whether retrieval surfaces the right page, and a
+groundedness check on the answers. The same eval surfaced the same honest miss — reinforcement-
+learning questions that retrieve the wrong RL post first, because those posts share so much
+vocabulary. And because the API emits every agent step as an SSE event, I get a basic trace of what
+it did for free.
+
+> **Real-world swap:** **Ragas** for LLM-judged faithfulness, and **LangSmith** or **LangFuse** for
+> hosted tracing over many real conversations.
+
+## Could I have used my fine-tuned model?
+
+[Part 3](/blogs/fine-tuning-llms.html) fine-tuned and quantized a small open model. Could it be the
+generator here instead of Gemini? Absolutely — `agent.py` already has an `SLMPolicy` that drives the
+loop with a local model; point it (or a **vLLM** endpoint serving your LoRA'd model) at the policy
+and the loop doesn't care what produces the next Thought. Gemini won this particular contest on
+**zero ops and a free tier**, not on quality of idea. The pluggable-policy seam makes swapping the
+generator a one-line change.
+
+## From scratch → production, in one table
+
+| Stage | File | We built (this series) | Production tool |
+|-------|------|------------------------|-----------------|
+| Ingestion | `crawl.py` | stdlib sitemap crawler | Firecrawl / Scrapy / LangChain loaders |
+| Retrieval | `rag.py` | chunk → embed → cosine top-k (Part 1) | LangChain splitters + Milvus / Qdrant / pgvector |
+| Agent loop | `agent.py` | ReAct `for` loop + scratchpad (Part 2) | LangGraph state graph |
+| Tools | `mcp_client.py`, `mcp_server/` | FastMCP + a from-scratch MCP client | MCP (already the standard), servers as services |
+| Serving | `app.py` | FastAPI + SSE | LangServe / managed host |
+| Frontend | `widget.js` | zero-dep Shadow-DOM bubble | bundled web component |
+| Safety | `app.py`, `agent.py` | rate limits + scoped prompt | API-gateway limits + guardrail layer |
+| Eval / tracing | (Part 4) | hit@k, MRR, SSE events | Ragas + LangSmith / LangFuse |
+| Generation | `agent.py` | Gemini API | vLLM + your fine-tuned model (Part 3) |
+
+## Key takeaways
+
+- **A production LLM app is the from-scratch pieces, snapped together.** Nothing in this chatbot is
+  conceptually new — it's Parts 1–4 wired into one request path, and you can read every file.
+- **Constraints design the system.** "Free, 512 MB, no GPU" is the reason generation and embeddings
+  are both hosted APIs, the store is a plain matrix, embeddings are cached in git, and MCP runs
+  in-process.
+- **MCP earns its place** when a tool should be reusable, not glued into one app — here it's a real
+  choice, with both a from-scratch client and a framework server.
+- **The gap between a demo and a deployment is safety and cost** — a scoped prompt, rate limits,
+  input caps, an origin allowlist, quota fallbacks. That's the work that isn't in the tutorials.
+- **Clean interfaces make every swap a one-liner** — Gemini ↔ a vLLM-served fine-tune, NumPy ↔
+  Milvus, the hand-rolled loop ↔ LangGraph.
+
+## Go deeper
+
+- **[The full source](https://github.com/adityajn105/portfolio-chatbot)** — read along; every file
+  above is small and commented.
+- [LangGraph](https://langchain-ai.github.io/langgraph/) — resumable, branching agent loops.
+- [Model Context Protocol](https://modelcontextprotocol.io/) — the open standard for tools.
+- [FastAPI](https://fastapi.tiangolo.com/) + [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) — the streaming transport.
+- [Milvus](https://milvus.io/) · [Qdrant](https://qdrant.tech/) · [pgvector](https://github.com/pgvector/pgvector) — vector stores for when the matrix outgrows one box.
+- [vLLM](https://docs.vllm.ai/) — serve your own fine-tuned model fast.
+
+*That's the whole series, standing as one deployed thing. You built retrieval, a reasoning loop, a
+fine-tuned model, and a way to measure them — and then wired them into an assistant that's live on
+my [home page](/) and at [chat.adityajain.me](https://chat.adityajain.me), with every line on
+[GitHub](https://github.com/adityajn105/portfolio-chatbot). The frameworks will keep changing; the
+machine underneath is the one you now understand from the inside.*
+
+<LlmSeriesNav current={5} position="bottom" />

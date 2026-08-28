@@ -1,0 +1,155 @@
+---
+title: "Fine-Tuning & Serving LLMs: LoRA, quantization, and vLLM"
+description: "When prompting isn't enough, you fine-tune. This post builds LoRA's low-rank idea from scratch in NumPy, shows why it trains ~250x fewer parameters, explains quantization and why 4-bit lets big models fit on small GPUs, and covers serving with vLLM. With interactive calculators for rank and memory."
+pubDate: 2026-09-01
+tags: ["LLM", "Fine-Tuning", "LoRA", "Quantization"]
+---
+
+import LoraExplorer from '../../components/gpt/LoraExplorer.astro';
+import Quantize from '../../components/gpt/Quantize.astro';
+import LlmSeriesNav from '../../components/gpt/LlmSeriesNav.astro';
+
+So far in this series we've changed what the model can *see* — [retrieval](/blogs/rag-from-scratch.html)
+gave it documents, [agents](/blogs/agents-from-scratch.html) gave it tools. This post changes the
+model *itself*. When you need it to reliably follow a format, speak in a particular voice, or know
+a domain cold, you **fine-tune**: keep training a pretrained model on your own examples.
+
+The catch is cost. A modern model has billions of parameters; updating all of them needs a
+cluster and a small fortune. The techniques that made fine-tuning accessible to everyone —
+**LoRA** and **quantization** — are clever ways around exactly that cost, and both are simple
+enough to understand from the inside. Let's do that, then serve the result.
+
+## First: do you even need to fine-tune?
+
+Reach for the cheapest tool that works, in this order:
+
+1. **Prompting** — just ask well. Zero training.
+2. **RAG** — inject the right knowledge at query time (the [first post](/blogs/rag-from-scratch.html)). Best when the problem is *missing facts*.
+3. **Fine-tuning** — change the model's behavior. Best when the problem is *form, style, or a skill* the model won't reliably follow no matter how you prompt.
+
+Fine-tuning teaches **behavior**, not facts — a common trap is trying to fine-tune knowledge in
+when you should have retrieved it. For "answer in my voice, always with citations," fine-tuning
+earns its keep. For "know what my latest post said," use RAG.
+
+## LoRA: don't retrain the matrix, learn a small correction
+
+Fine-tuning updates weight matrices. A single one might be $d \times d$ with $d = 4096$ — that's
+~16.8M numbers, and there are hundreds of them. Updating all of it (*full* fine-tuning) is the
+expensive part.
+
+**LoRA (Low-Rank Adaptation)** makes a bet that pays off: the *change* you need to make during
+fine-tuning is simple — it has low "rank" — even though the original matrix is huge. So instead of
+learning a full $d \times d$ update, freeze the original weight $W$ and learn the update as a
+product of two skinny matrices, $B$ ($d \times r$) and $A$ ($r \times d$), with the rank $r$ tiny
+(often 8 or 16):
+
+$$ W_{\text{effective}} = W_{\text{frozen}} + \frac{\alpha}{r}\, B A $$
+
+Only $B$ and $A$ are trained — $2 d r$ numbers instead of $d^2$. Slide the rank and matrix size
+and watch the trainable-parameter count collapse:
+
+<LoraExplorer>
+  <p class="figure__cap">The hatched square is <b>W</b>, frozen. Only the two slim matrices
+  <b>B</b> and <b>A</b> are trained, and their product has the same <b>d×d</b> shape as W so it
+  slots right in. Rank <b>r</b> is the whole knob: bigger r = more capacity but more parameters.</p>
+</LoraExplorer>
+
+This isn't hand-waving — I built it in NumPy to be sure. Freeze a random matrix, initialize the
+adapter as a no-op ($B = 0$), and train *only* $B$ and $A$ by gradient descent to match a target
+correction. The loss drops to ~$10^{-32}$: a rank-$r$ adapter perfectly recovers a rank-$r$
+update, while training a fraction of the parameters.
+
+```python
+# the entire LoRA training step, from scratch (src/lora_demo.py)
+err = B @ A - target        # current adapter output vs the correction we want
+gB  = err @ A.T             # gradient wrt B
+gA  = B.T @ err             # gradient wrt A
+B  -= lr * gB               # W stays frozen; only the adapter moves
+A  -= lr * gA
+```
+
+The framework version is the same idea on a real model: attach adapters to the attention and MLP
+projection matrices and train with Unsloth + TRL. The `r` and `alpha` in that config are exactly
+the knobs above.
+
+```python
+model = FastLanguageModel.get_peft_model(
+    model, r=16, lora_alpha=16,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                    "gate_proj", "up_proj", "down_proj"],
+)
+```
+
+Because only the adapters change, the trained artifact is a few **megabytes**, not gigabytes —
+you can keep dozens of task-specific adapters and swap them over one frozen base model.
+
+## Quantization: store the weights in fewer bits
+
+LoRA cuts what you *train*. **Quantization** cuts what you *store*. A weight kept as a 32-bit
+float takes 4 bytes; store it in 8 bits (1 byte) or 4 bits (½ byte) and the model's memory
+footprint shrinks proportionally — at the cost of a little numerical precision. Since inference is
+mostly memory-bound, this is often the difference between "fits on your GPU" and "doesn't."
+
+Pick a model size and a precision and see what fits:
+
+<Quantize>
+  <p class="figure__cap">Memory ≈ parameters × bytes-per-parameter. A 7B model is ~28&nbsp;GB at
+  FP32 but only ~3.5&nbsp;GB at INT4 — which is how a 7B model runs on a laptop. Note this counts
+  weights only; the KV-cache and activations need more at run time.</p>
+</Quantize>
+
+**QLoRA** combines both tricks: load the frozen base model in 4-bit (quantized) and train small
+LoRA adapters on top in higher precision. You get low memory *and* low trainable-parameter count
+at once — which is why fine-tuning a 7B model on a single free-tier GPU is now routine. That's the
+`load_in_4bit=True` in the training script.
+
+## Serving: vLLM
+
+A fine-tuned model that only runs in a notebook isn't useful. **vLLM** is the standard high-throughput
+server. Two ideas make it fast, and both should feel familiar from the [GPT series](/blogs/gpt-5-base-to-chatgpt.html):
+
+- **PagedAttention** — it manages the KV-cache like an operating system manages memory (in pages),
+  so it wastes far less and serves more requests at once.
+- **Continuous batching** — new requests slot into a running batch instead of waiting for it to
+  finish, keeping the GPU busy.
+
+vLLM can serve the base model and apply your LoRA adapter per request, and exposes an
+OpenAI-compatible API — so you point the Phase-1 RAG generator at it and the whole pipeline now
+answers **in your fine-tuned voice**:
+
+```bash
+vllm serve unsloth/Llama-3.2-1B-Instruct \
+    --enable-lora --lora-modules blog=outputs/blog-lora
+```
+
+## From scratch → framework
+
+| Layer | We built (from scratch) | Framework / tool |
+|-------|-------------------------|------------------|
+| Low-rank adapter | NumPy `B@A` + gradient step | PEFT / Unsloth LoRA |
+| Training data | templated Q&A from the blog | your labeled set, or LLM-generated pairs |
+| Training loop | manual gradient descent | TRL `SFTTrainer` |
+| Quantization | round a weight to fewer bits | bitsandbytes (4-bit), GGUF |
+| Serving | — | vLLM (PagedAttention, batching) |
+
+## Key takeaways
+
+- **Fine-tune for behavior, retrieve for facts.** Try prompting → RAG → fine-tuning, in that order.
+- **LoRA freezes the big matrix and learns a low-rank correction** — $2dr$ params instead of $d^2$,
+  often ~250× fewer. The adapter is a few MB and swappable.
+- **Quantization stores weights in fewer bits**; memory ≈ params × bytes, so INT4 shrinks a 7B
+  model from ~28&nbsp;GB to ~3.5&nbsp;GB. **QLoRA** stacks both.
+- **vLLM serves it efficiently** with paged KV-cache and continuous batching, and can apply your
+  adapter over a shared base model.
+
+## Go deeper
+
+- [LoRA paper](https://arxiv.org/abs/2106.09685) and [QLoRA](https://arxiv.org/abs/2305.14314).
+- [Unsloth](https://github.com/unslothai/unsloth) — fast, low-memory LoRA fine-tuning.
+- [Hugging Face PEFT](https://huggingface.co/docs/peft) and [TRL](https://huggingface.co/docs/trl).
+- [vLLM](https://docs.vllm.ai/) — the serving engine (PagedAttention).
+
+*Last in the series: knowing whether any of this actually works — **evaluation and
+observability** — and shipping the whole thing as a live demo.*
+
+<LlmSeriesNav current={3} position="bottom" />

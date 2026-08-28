@@ -1,0 +1,275 @@
+---
+title: "RAG from Scratch: teaching a model to look things up"
+description: "Retrieval-Augmented Generation, built by hand with no libraries. Chunk a corpus, turn text into vectors with TF-IDF, retrieve by cosine similarity, and answer grounded in what you found — then see exactly where a purely lexical approach breaks and why semantic embeddings fix it. With interactive playgrounds."
+pubDate: 2026-08-30
+tags: ["LLM", "RAG", "NLP", "Retrieval"]
+---
+
+import Chunker from '../../components/gpt/Chunker.astro';
+import Retriever from '../../components/gpt/Retriever.astro';
+import LlmSeriesNav from '../../components/gpt/LlmSeriesNav.astro';
+
+A language model only knows what was baked into its weights during training. Ask it about
+*your* documents, last week's news, or an internal wiki and it will either shrug or, worse,
+confidently make something up. **Retrieval-Augmented Generation (RAG)** is the fix that
+powers most useful LLM apps today: before answering, go *find* the relevant text and hand it
+to the model as context. The model stops reciting from memory and starts reading from a source.
+
+This is the first post in a hands-on *Building with LLMs* series where I build each piece
+**from scratch first, then swap in the real framework** — so the mechanics are never hidden
+behind a `.query()` call you don't understand. Everything here runs live in your browser on
+tiny data; the companion project runs the same logic in Python over the actual posts on this
+blog. If you haven't yet, my [How GPT Works](/blogs/gpt-1-foundations.html) series explains the
+model we're feeding; this post is about what we feed it.
+
+## Why not just paste everything into the prompt?
+
+The obvious idea — dump the whole knowledge base into the prompt — fails for three reasons:
+
+- **The context window is finite.** You can't fit a 500-page handbook (or 14 blog posts) into
+  a prompt, and even where you can, it's slow and expensive.
+- **Attention dilutes.** Bury one relevant paragraph in 50 pages of noise and answer quality
+  drops — the "needle in a haystack" problem.
+- **Knowledge goes stale.** Retraining to add a document is absurd. Retrieval lets you change
+  what the model knows by changing a folder of files.
+
+RAG keeps the prompt small and *relevant*: retrieve the handful of passages that actually
+matter, then generate. The whole pipeline is five steps:
+
+> **chunk** the corpus → **embed** each chunk into a vector → **store** the vectors →
+> **retrieve** the closest ones to a query → **generate** an answer grounded in them.
+
+Let's build each one.
+
+## Step 1 · Chunking: cut documents into retrievable pieces
+
+You don't retrieve whole documents — a blog post might cover five topics, and you want the one
+paragraph that answers the question, not the other 2,000 words. So the first job is to split
+each document into **chunks**: pieces small enough to be specific, large enough to stand alone.
+
+Two forces pull against each other. **Too large** and a chunk mixes topics, so its vector is a
+blurry average that matches everything weakly and nothing well. **Too small** and you shred the
+context — a sentence retrieved without its surroundings can be meaningless. A good splitter also
+respects structure: break on headings, and keep each chunk tagged with the heading it came from
+so you know where it lives.
+
+Here's the from-scratch splitter — walk the lines, start a new section at every markdown
+heading, then greedily pack paragraphs into pieces under a size budget:
+
+```python
+def chunk_markdown(md, source, max_chars=800):
+    body = clean(strip_frontmatter(md))
+    chunks, heading, section, counter = [], source, [], 0
+
+    def flush():
+        nonlocal section, counter
+        text = "\n".join(section).strip()
+        section = []
+        for piece in _window(text, max_chars):   # pack paragraphs to <= max_chars
+            chunks.append(Chunk(text=piece, source=source, heading=heading, idx=counter))
+            counter += 1
+
+    for line in body.splitlines():
+        m = HEADING.match(line)
+        if m:
+            flush()                 # close the previous section
+            heading = m.group(2)    # remember the new heading
+        else:
+            section.append(line)
+    flush()
+    return chunks
+```
+
+Edit the source or drag the size slider and watch the chunk boundaries move. Notice how each
+chunk carries its nearest heading, and how a smaller budget produces more, tighter pieces:
+
+<Chunker>
+  <p class="figure__cap">The heading travels with every chunk it produced — that label
+  becomes the <b>citation</b> later, so an answer can point back to exactly where it came
+  from. Real systems often add a little <b>overlap</b> between adjacent chunks so a sentence
+  split across a boundary isn't lost.</p>
+</Chunker>
+
+## Step 2 · Embedding: turn text into vectors with TF-IDF
+
+To find "similar" text we need text as **numbers**. The oldest trick that still works
+surprisingly well is **TF-IDF**, and it takes only two ideas:
+
+- **Term frequency (TF)** — a word that appears often in a chunk is probably what that chunk is
+  about.
+- **Inverse document frequency (IDF)** — but a word that appears in *every* chunk (like "the")
+  tells you nothing. Downweight common words; upweight rare, distinctive ones.
+
+Multiply them and each word gets a weight that is high only when it's both frequent *here* and
+rare *overall*:
+
+$$ \text{tfidf}(t, d) = \underbrace{\text{count}(t, d)}_{\text{how often, here}} \times \underbrace{\left( \log\frac{1+N}{1+\text{df}(t)} + 1 \right)}_{\text{how rare, overall}} $$
+
+where $N$ is the number of chunks and $\text{df}(t)$ is how many chunks contain term $t$. Do
+this for every word in the vocabulary and each chunk becomes a long, mostly-zero vector — one
+dimension per word. From scratch, in NumPy:
+
+```python
+def encode(self, texts):
+    mat = np.zeros((len(texts), len(self.vocab)), dtype=np.float32)
+    for r, text in enumerate(texts):
+        for tok in tokenize(text):
+            j = self.vocab.get(tok)
+            if j is not None:
+                mat[r, j] += 1.0        # term frequency
+    mat *= self.idf                      # weight by idf
+    norms = np.linalg.norm(mat, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    return mat / norms                   # L2-normalize -> dot product = cosine
+```
+
+That last line matters. We **L2-normalize** every vector to unit length, so that comparing two
+vectors with a dot product gives **cosine similarity** directly — the angle between them,
+ignoring length. (If the dot product as a similarity measure is fuzzy, the
+[first GPT post](/blogs/gpt-1-foundations.html) has a draggable playground for it.)
+
+## Step 3 & 4 · Store and retrieve: cosine similarity is the whole engine
+
+The "vector store" is just the stacked matrix of chunk vectors plus their metadata. Retrieval
+is one line of linear algebra: dot the query vector against every chunk at once, then take the
+top few.
+
+$$ \text{score}(q, d) = \hat{q} \cdot \hat{d} = \cos\theta \qquad \text{(both unit vectors)} $$
+
+```python
+def search(self, query_vec, k=4):
+    sims = self.vectors @ query_vec      # cosine of query vs every chunk, at once
+    top = np.argpartition(-sims, k - 1)[:k]
+    return [Hit(sims[i], self.metas[i]) for i in top[np.argsort(-sims[top])]]
+```
+
+That's it — that single matrix-vector product is what a billion-dollar vector database is
+optimizing under the hood. Type a question below and watch the toy corpus get ranked live.
+Matched query words are highlighted, and the bars are cosine scores. Try the presets:
+
+<Retriever>
+  <p class="figure__cap">The top result glows. Notice it wins by <b>sharing distinctive
+  words</b> with your query — retrieval here is literally weighted word overlap turned into
+  geometry. Watch what the <b>"values"</b> preset does.</p>
+</Retriever>
+
+## Step 5 · Where lexical retrieval breaks (and why embeddings exist)
+
+Run the **"values"** preset above and something goes wrong. You were probably thinking of
+attention's *value vectors* — but the bare word "values" is far more common in the
+reinforcement-learning posts (*value function*, *state values*), so those win. TF-IDF matches
+**strings, not meaning**. It has no idea that "car" and "automobile" are the same thing, or
+that your "values" means something specific in context.
+
+This isn't a bug I introduced for the demo — it's the real result I hit building this over my
+actual blog. The query *"how does self-attention use queries, keys and values?"* retrieved
+reinforcement-learning content first, purely because of that one overloaded word.
+
+The fix is **semantic embeddings**: instead of one dimension per word, a small neural network
+maps text into a few hundred dimensions where *meaning* is the geometry — the whole premise of
+my [Word Embeddings](/blogs/word-embeddings.html) post, and the same idea attention uses inside
+the model ([Part 2](/blogs/gpt-2-attention.html)). "car" and "automobile" land in nearly the
+same place; "values" near attention lands differently than "values" near reward functions.
+Because we built the pipeline behind a clean interface, swapping it in changes one class and
+nothing else:
+
+```python
+class SentenceTransformerEmbedder:
+    def __init__(self, model_name="all-MiniLM-L6-v2"):
+        from sentence_transformers import SentenceTransformer
+        self.model = SentenceTransformer(model_name)
+    def encode(self, texts):
+        return self.model.encode(texts, normalize_embeddings=True)
+```
+
+Same `encode`, same downstream store and retrieval. Building the lexical baseline first is what
+lets you *feel* the limitation the upgrade removes — instead of cargo-culting embeddings because
+a tutorial said so.
+
+## Step 6 · Generation: grounding the answer
+
+Retrieval found the passages; now we answer. The un-glamorous truth is that RAG quality lives
+or dies on **the prompt** — specifically, instructing the model to answer *only* from the
+retrieved context and to cite it:
+
+```python
+prompt = f"""Use ONLY the context below. If it doesn't contain the answer,
+say you don't know. Cite sources inline using their [number].
+
+Context:
+{context}
+
+Question: {question}
+Answer:"""
+```
+
+That "only from the context" clause is the anti-hallucination lever: it turns the model from a
+know-it-all into a careful reader. The from-scratch baseline skips the LLM entirely and just
+returns the top chunks with their citations — which is a genuinely useful honesty check, because
+if the *right* passages aren't showing up here, no amount of clever generation will save the
+answer. **Retrieval is the part that has to be right first.**
+
+## From scratch → framework
+
+Everything above is a few hundred lines of NumPy. In production you keep the exact same shape
+and swap each layer for a battle-tested tool:
+
+| Layer | We built (from scratch) | Framework / tool you'd use |
+|-------|-------------------------|----------------------------|
+| Chunking | heading-aware splitter | LangChain text splitters |
+| Embeddings | TF-IDF | sentence-transformers, OpenAI embeddings |
+| Vector store | NumPy matrix + `argpartition` | FAISS, Chroma, Qdrant, Milvus, pgvector |
+| Retrieval | cosine top-k | the store's ANN index (fast at millions of vectors) |
+| Generation | extractive / OpenAI | LangChain / LlamaIndex RAG chains |
+| Evaluation | eyeball the top-k | Ragas (faithfulness, context precision) |
+
+One distinction worth knowing on the vector-store row: **FAISS is a library** — an in-process
+index you load, query, and persist yourself — while **Chroma, Qdrant, and Milvus are vector
+*databases*** that run as a service and add persistence, metadata filtering, and horizontal
+scaling on top. FAISS is perfect until your index outgrows one machine; Milvus is what you reach
+for at billion-vector, distributed scale. `pgvector` is a third path: if your data already lives
+in Postgres, it adds vector search without a new system to operate.
+
+**LangChain** shows up twice in that table, so it's worth saying what it actually is — the name
+gets thrown around as if it were a mysterious black box. It isn't: LangChain is a framework for
+*wiring LLM steps together*. It hands you the exact pieces you just built by hand — document
+loaders, text splitters, embedding and retriever interfaces, prompt templates — as
+interchangeable components, plus a small composition syntax (LCEL) to chain them into
+`retrieve → build prompt → call model → parse output`. The payoff isn't magic; it's the **common
+interface**. Because every embedder exposes the same method, you can swap TF-IDF for OpenAI
+embeddings, or FAISS for Qdrant, without touching the rest of the pipeline — precisely the seam we
+designed on purpose with our own `encode`. The cost is a layer of abstraction to learn: worth it
+when you're assembling many moving parts, overkill when a few hundred lines of NumPy already do
+the job. (Its sibling **LangGraph** handles the *agent* side — stateful, branching loops — which
+is the [next post](/blogs/agents-from-scratch.html).)
+
+None of those tools are magic — each is a hardened version of a piece you now understand from
+the inside. That's the point of building it by hand once.
+
+## Key takeaways
+
+- **RAG = retrieve, then generate.** It keeps prompts small and relevant, kills stale knowledge,
+  and grounds answers in real sources instead of the model's memory.
+- **Chunking is a real design choice**, not a formality — size and boundaries directly shape
+  retrieval quality. Keep the heading for citations.
+- **TF-IDF turns "distinctive shared words" into vectors**, and L2-normalizing makes a dot
+  product equal cosine similarity — the entire retrieval engine.
+- **Lexical retrieval matches strings, not meaning.** The "values" failure is exactly why
+  semantic embeddings exist; a clean interface lets you swap them in without touching the rest.
+- **Retrieval must be right before generation matters**, and the grounding prompt is what keeps
+  the model honest.
+
+## Go deeper
+
+- The original RAG paper — [Lewis et al., 2020](https://arxiv.org/abs/2005.11401).
+- [sentence-transformers](https://www.sbert.net/) — the easy on-ramp to semantic embeddings.
+- [FAISS](https://faiss.ai/) — Facebook AI's similarity-search library, the classic vector index.
+- [LangChain RAG tutorial](https://python.langchain.com/docs/tutorials/rag/) — the same pipeline
+  in the most common framework.
+- [Ragas](https://docs.ragas.io/) — how to actually *measure* whether your RAG is any good
+  (the subject of a later post in this series).
+
+*Next up: giving this system the ability to **act** — tools and a reasoning loop — by building a
+ReAct agent from scratch, then rebuilding it in LangGraph.*
+
+<LlmSeriesNav current={1} position="bottom" />

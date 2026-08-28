@@ -1,0 +1,14 @@
+---
+// Quantization memory calculator — model size × precision → GPU fit.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-quant></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountQuantize } from '../../scripts/gpt/finetune.js';
+  document.querySelectorAll('[data-gpt-quant]').forEach((el) => mountQuantize(el));
+</script>

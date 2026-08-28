@@ -1,0 +1,14 @@
+---
+// LoRA rank explorer — full fine-tune vs low-rank adapter parameter counts.
+import '../../styles/gpt-widgets.css';
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-lora></div>
+  <slot />
+</figure>
+
+<script>
+  import { mountLoraExplorer } from '../../scripts/gpt/finetune.js';
+  document.querySelectorAll('[data-gpt-lora]').forEach((el) => mountLoraExplorer(el));
+</script>

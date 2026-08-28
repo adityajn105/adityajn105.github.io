@@ -1,0 +1,189 @@
+---
+// LlmStackMap — a clickable architecture map of the deployed portfolio chatbot.
+// Selecting a stage reveals what we built "from scratch" (from Parts 1–4) and
+// the tool you'd "swap in" for production. CSS-only interactivity: hidden radio
+// inputs + <label> nodes + `:checked ~` sibling reveals, so there is no JS file.
+// Styling follows the site design tokens and mirrors the other gpt widgets.
+import '../../styles/gpt-widgets.css';
+
+// Render inline `code` spans as <code>, but HTML-escape everything first so
+// literal angle brackets in the copy (e.g. `<script>`) become visible text
+// and never inject a live tag into the page via set:html.
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const fmt = (s) =>
+  escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+const stages = [
+  {
+    id: 'widget',
+    label: 'Widget',
+    sub: 'Shadow DOM',
+    scratch: 'A zero-dependency chat bubble in a Shadow DOM — one `<script>` tag drops it on any page, fully style-isolated. It streams the answer and renders nothing else.',
+    prod: 'Same idea at scale: a bundled web component or an iframe embed, plus a design system. The Shadow DOM boundary is already the production-grade part.',
+  },
+  {
+    id: 'api',
+    label: 'API',
+    sub: 'FastAPI · SSE',
+    scratch: 'A thin FastAPI app with one `/chat` route that streams Server-Sent Events, so the widget can narrate "searching… → answer" token by token.',
+    prod: 'The same FastAPI/SSE shape, behind a gateway with auth and autoscaling — or LangServe if you want the chain wired up for you.',
+  },
+  {
+    id: 'agent',
+    label: 'Agent',
+    sub: 'ReAct loop',
+    scratch: 'The Part 2 loop, verbatim: Reason → Act → Observe, stopping the model before it writes its own `Observation:` so tool results are real, not hallucinated.',
+    prod: 'LangGraph — the loop as a resumable state graph, with branching, retries, and human-in-the-loop for free.',
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    sub: 'via MCP',
+    scratch: 'Two FastMCP servers: `search_site` (the Part 1 RAG retriever) and `send_message` (emails me via Formspree). Tools are a name + description + function — exactly the Part 2 contract.',
+    prod: 'Still MCP — that IS the production standard from Part 2. Any MCP-aware host (Claude, an IDE, another agent) can reuse these same tools.',
+  },
+  {
+    id: 'retrieval',
+    label: 'Retrieval',
+    sub: 'chunk · embed · cosine',
+    scratch: 'The Part 1 pipeline: heading-aware chunking, embeddings, and a cosine top-k over a NumPy matrix. Small corpus, so the matrix IS the vector store.',
+    prod: 'LangChain loaders/splitters up front; Milvus / Qdrant / pgvector for the store once you outgrow one machine.',
+  },
+  {
+    id: 'gemini',
+    label: 'Gemini',
+    sub: 'generation + embeddings',
+    scratch: 'One hosted model does double duty — `gemini-3.5-flash` for generation and the Gemini embedding API for vectors, so nothing heavy loads into 512 MB of RAM.',
+    prod: 'Your fine-tuned model from Part 3, served with vLLM — or any hosted API. Gemini won here on zero-ops + a free tier.',
+  },
+];
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="stack">
+      {stages.map((s, i) => (
+        <input
+          type="radio"
+          name="llm-stack"
+          id={`stack-${s.id}`}
+          class="stack__radio"
+          checked={i === 0}
+        />
+      ))}
+
+      <div class="stack__flow" role="tablist" aria-label="Pipeline stages">
+        {stages.map((s, i) => (
+          <>
+            {i > 0 && <span class="stack__arrow" aria-hidden="true">→</span>}
+            <label class="stack__node" for={`stack-${s.id}`}>
+              <span class="stack__node-t">{s.label}</span>
+              <span class="stack__node-s">{s.sub}</span>
+            </label>
+          </>
+        ))}
+      </div>
+
+      <div class="stack__panels">
+        {stages.map((s) => (
+          <div class="stack__panel" data-for={s.id}>
+            <p class="stack__row stack__row--scratch">
+              <span class="stack__tag">From scratch</span>
+              <span class="stack__body" set:html={fmt(s.scratch)} />
+            </p>
+            <p class="stack__row stack__row--prod">
+              <span class="stack__tag">In production</span>
+              <span class="stack__body" set:html={fmt(s.prod)} />
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <p class="stack__hint">Click a stage. Each one is a piece this series built by hand — and the tool you'd reach for in production.</p>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .stack { margin: 0; }
+  .stack__radio { position: absolute; opacity: 0; pointer-events: none; }
+
+  .stack__flow {
+    display: flex; align-items: stretch; flex-wrap: wrap;
+    gap: 0.4rem 0.5rem; margin-bottom: 1rem;
+  }
+  .stack__node {
+    display: flex; flex-direction: column; gap: 0.1rem; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.8rem;
+    transition: all 0.18s var(--ease); flex: 1 1 auto; min-width: 0;
+  }
+  .stack__node:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .stack__node-t { font-weight: 650; font-size: 0.9rem; color: var(--text); }
+  .stack__node-s {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .stack__arrow { align-self: center; color: var(--text-faint); font-size: 0.9rem; }
+
+  .stack__panels { position: relative; }
+  .stack__panel { display: none; }
+  .stack__panel .stack__row {
+    display: grid; grid-template-columns: 8.5rem 1fr; gap: 0.7rem; align-items: baseline;
+    margin: 0; padding: 0.7rem 0.9rem; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--bg-subtle);
+  }
+  .stack__panel .stack__row--scratch { border-left: 3px solid var(--gpt-c2); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .stack__panel .stack__row--prod { border-left: 3px solid var(--accent); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+  .stack__tag {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .stack__row--scratch .stack__tag { color: var(--gpt-c2); }
+  .stack__row--prod .stack__tag { color: var(--accent); }
+  .stack__body { font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); }
+  .stack__body code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .stack__hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.9rem 0 0; }
+
+  /* CSS-only wiring: the checked stage highlights its node and reveals its panel */
+  #stack-widget:checked    ~ .stack__flow label[for="stack-widget"],
+  #stack-api:checked       ~ .stack__flow label[for="stack-api"],
+  #stack-agent:checked     ~ .stack__flow label[for="stack-agent"],
+  #stack-tools:checked     ~ .stack__flow label[for="stack-tools"],
+  #stack-retrieval:checked ~ .stack__flow label[for="stack-retrieval"],
+  #stack-gemini:checked    ~ .stack__flow label[for="stack-gemini"] {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm);
+  }
+  #stack-widget:checked    ~ .stack__panels .stack__panel[data-for="widget"],
+  #stack-api:checked       ~ .stack__panels .stack__panel[data-for="api"],
+  #stack-agent:checked     ~ .stack__panels .stack__panel[data-for="agent"],
+  #stack-tools:checked     ~ .stack__panels .stack__panel[data-for="tools"],
+  #stack-retrieval:checked ~ .stack__panels .stack__panel[data-for="retrieval"],
+  #stack-gemini:checked    ~ .stack__panels .stack__panel[data-for="gemini"] {
+    display: block; animation: stack-fade 0.25s var(--ease);
+  }
+  @keyframes stack-fade { from { opacity: 0; transform: translateY(4px); } }
+
+  /* keyboard focus visibility (radios are visually hidden) */
+  .stack__radio:focus-visible ~ .stack__flow label[for] { outline: none; }
+  #stack-widget:focus-visible    ~ .stack__flow label[for="stack-widget"],
+  #stack-api:focus-visible       ~ .stack__flow label[for="stack-api"],
+  #stack-agent:focus-visible     ~ .stack__flow label[for="stack-agent"],
+  #stack-tools:focus-visible     ~ .stack__flow label[for="stack-tools"],
+  #stack-retrieval:focus-visible ~ .stack__flow label[for="stack-retrieval"],
+  #stack-gemini:focus-visible    ~ .stack__flow label[for="stack-gemini"] {
+    outline: 2.5px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .stack__flow { flex-direction: column; align-items: stretch; }
+    .stack__arrow { display: none; }
+    .stack__panel .stack__row { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>

@@ -1,0 +1,98 @@
+---
+// Series navigation for the "Building with LLMs" multi-part series.
+// `position="top"` renders the full contents list; `position="bottom"`
+// renders previous/next links. Mirrors SeriesNav (the GPT guide) so the
+// two series look and behave identically.
+interface Props {
+  current: number;
+  position?: 'top' | 'bottom';
+}
+const { current, position = 'bottom' } = Astro.props;
+
+const parts = [
+  { n: 1, slug: 'rag-from-scratch', title: 'RAG from Scratch', published: true },
+  { n: 2, slug: 'agents-from-scratch', title: 'Agents from Scratch', published: true },
+  { n: 3, slug: 'fine-tuning-llms', title: 'Fine-Tuning & Serving', published: true },
+  { n: 4, slug: 'evaluating-llm-apps', title: 'Evaluation & Observability', published: true },
+  { n: 5, slug: 'building-a-portfolio-chatbot', title: 'Building the Chatbot', published: true },
+];
+const href = (p: { slug: string }) => `/blogs/${p.slug}.html`;
+const prev = parts.find((p) => p.n === current - 1);
+const next = parts.find((p) => p.n === current + 1);
+---
+
+{position === 'top' && (
+  <nav class="llm-series" aria-label="Series contents">
+    <p class="llm-series__eyebrow">A 5-part series · Building with LLMs</p>
+    <ol class="llm-series__list">
+      {parts.map((p) => (
+        <li class:list={['llm-series__item', { current: p.n === current }]}>
+          <span class="llm-series__num">{String(p.n).padStart(2, '0')}</span>
+          {p.n === current ? (
+            <span class="llm-series__title" aria-current="true">{p.title}</span>
+          ) : (
+            <a class="llm-series__title" href={href(p)}>{p.title}</a>
+          )}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+{position === 'bottom' && (
+  <nav class="llm-series llm-series--pager" aria-label="Series navigation">
+    {prev ? (
+      <a class="llm-series__pg prev" href={href(prev)}>
+        <span class="llm-series__dir">← Previous</span>
+        <span class="llm-series__pgt">Part {prev.n}: {prev.title}</span>
+      </a>
+    ) : <span />}
+    {next ? (
+      <a class="llm-series__pg next" href={href(next)}>
+        <span class="llm-series__dir">Next →</span>
+        <span class="llm-series__pgt">Part {next.n}: {next.title}</span>
+      </a>
+    ) : <span />}
+  </nav>
+)}
+
+<style>
+  .llm-series {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
+    padding: 1.2rem 1.4rem;
+    margin: 2rem 0;
+  }
+  .llm-series__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+  .llm-series__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .llm-series__item { display: flex; align-items: baseline; gap: 0.7rem; }
+  .llm-series__num { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+  .llm-series__item.current .llm-series__num { color: var(--accent); }
+  .llm-series__title { font-weight: 550; }
+  .llm-series__item.current .llm-series__title { color: var(--accent); }
+  a.llm-series__title { color: var(--text); text-decoration: none; }
+  a.llm-series__title:hover { color: var(--accent); }
+
+  .llm-series--pager { display: flex; gap: 1rem; background: transparent; border: none; padding: 0; }
+  .llm-series__pg {
+    flex: 1; display: flex; flex-direction: column; gap: 0.25rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1rem 1.2rem; background: var(--bg-elevated); text-decoration: none;
+    transition: border-color 0.18s var(--ease);
+  }
+  a.llm-series__pg:hover { border-color: var(--accent); }
+  .llm-series__pg.next { text-align: right; align-items: flex-end; }
+  .llm-series__dir {
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .llm-series__pgt { font-weight: 600; color: var(--text); }
+</style>
