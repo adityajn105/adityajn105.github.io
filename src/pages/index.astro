@@ -135,14 +135,42 @@ const fmt = (d: Date) =>
       <div class="card-grid">
         {
           projects.slice(0, 6).map((p) => (
-            <a class="card" href={p.href} target="_blank" rel="noopener noreferrer" data-reveal>
+            <article class="card" data-reveal>
               <div class="card-head">
-                <h3>{p.title}</h3>
+                <h3>
+                  {/* Stretched link: whole tile opens the demo if there is one,
+                      else the code/repo link. The buttons below sit above it. */}
+                  <a
+                    class="card-link"
+                    href={p.demo ?? p.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {p.title}
+                  </a>
+                </h3>
                 <Icon name="arrow" size={16} class="card-arrow" />
               </div>
               <p class="card-desc">{p.description}</p>
-              <p class="card-tags">{p.tags.join(' · ')}</p>
-            </a>
+              <div class="card-foot">
+                <p class="card-tags">{p.tags.join(' · ')}</p>
+                <div class="card-actions">
+                  {p.demo && (
+                    <a class="card-btn" href={p.demo} target="_blank" rel="noopener noreferrer">
+                      <Icon name="external" size={13} /> Demo
+                    </a>
+                  )}
+                  <a
+                    class="card-btn card-btn-ghost"
+                    href={p.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Icon name="github" size={13} /> Code
+                  </a>
+                </div>
+              </div>
+            </article>
           ))
         }
       </div>
@@ -315,7 +343,7 @@ const fmt = (d: Date) =>
   .card-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, 12rem);
+    grid-template-rows: repeat(3, 13rem);
     grid-template-areas:
       'a a b c'
       'd e b c'
@@ -323,6 +351,7 @@ const fmt = (d: Date) =>
     gap: 1rem;
   }
   .card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
@@ -357,6 +386,20 @@ const fmt = (d: Date) =>
     font-size: 1.05rem;
     letter-spacing: -0.01em;
   }
+  /* Stretched title link: covers the whole tile so any non-button area opens
+     the demo (or code); the Demo/Code buttons sit above it via z-index. */
+  .card-link {
+    color: inherit;
+  }
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .card:hover .card-head h3 {
+    color: var(--accent);
+  }
   /* Up-right arrow hints at an external link; nudges on hover. */
   .card-arrow {
     color: var(--text-faint);
@@ -373,17 +416,60 @@ const fmt = (d: Date) =>
     font-size: 0.92rem;
     line-height: 1.6;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .card-tags {
+  .card-foot {
     margin-top: auto;
-    padding-top: 0.35rem;
+    padding-top: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .card-tags {
     font-family: var(--font-mono);
     font-size: 0.72rem;
     letter-spacing: 0.01em;
     color: var(--text-faint);
+  }
+  /* Demo (filled) + Code (ghost) actions. Above the stretched link (z-index 1)
+     so they're independently clickable. */
+  .card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .card-btn {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.34rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+    transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+      color 0.15s var(--ease);
+  }
+  .card-btn:hover {
+    background: color-mix(in srgb, var(--accent) 85%, #000);
+    color: var(--bg);
+  }
+  .card-btn-ghost {
+    background: transparent;
+    border-color: var(--border-strong);
+    color: var(--text-muted);
+  }
+  .card-btn-ghost:hover {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   /* ---------- Tags ---------- */
@@ -644,7 +730,7 @@ const fmt = (d: Date) =>
        equal area (2 cells) per tile. */
     .card-grid {
       grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(6, 10rem);
+      grid-template-rows: repeat(6, 11.5rem);
       grid-template-areas:
         'a a'
         'b c'
