@@ -1,0 +1,14 @@
+---
+// KvCacheViz — step through decode with the KV cache OFF vs ON. OFF recomputes
+// K,V for every prior token each step (quadratic total work); ON computes K,V for
+// the one new token and reuses the rest (linear), while the cache visibly grows.
+import '../../styles/gpt-widgets.css';
+---
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-kv-cache></div>
+  <slot />
+</figure>
+<script>
+  import { mountKvCacheViz } from '../../scripts/gpt/inference.js';
+  document.querySelectorAll('[data-gpt-kv-cache]').forEach((el) => mountKvCacheViz(el));
+</script>

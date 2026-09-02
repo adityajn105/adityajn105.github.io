@@ -1,0 +1,170 @@
+---
+// PagedAttention — a static diagram contrasting naive contiguous KV allocation
+// (one big slab per sequence, sized for max length → wasted reserved slots) with
+// PagedAttention's fixed-size pages indexed by a per-sequence block table, like
+// OS virtual memory (allocate on demand, scatter anywhere, share prefix pages).
+// No JS — styles in this component's own scoped <style>, using shared tokens.
+import '../../styles/gpt-widgets.css';
+
+// Naive: each sequence reserves 8 slots but only uses a few.
+const naive = [
+  { seq: 'A', used: 3, total: 8 },
+  { seq: 'B', used: 2, total: 8 },
+];
+
+// Paged: block size = 2 tokens/page. Physical pool + per-sequence block tables.
+// Seq A and Seq B share logical block 0 (e.g. an identical system prompt) → phys #3.
+const pool = [
+  { id: 0, owner: 'free' },
+  { id: 1, owner: 'A' },
+  { id: 2, owner: 'free' },
+  { id: 3, owner: 'shared' },
+  { id: 4, owner: 'free' },
+  { id: 5, owner: 'B' },
+  { id: 6, owner: 'free' },
+  { id: 7, owner: 'A' },
+];
+const tables = [
+  { seq: 'A', rows: [ { l: 0, p: 3, shared: true }, { l: 1, p: 7 }, { l: 2, p: 1 } ] },
+  { seq: 'B', rows: [ { l: 0, p: 3, shared: true }, { l: 1, p: 5 } ] },
+];
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="pa">
+      <div class="pa__legend" aria-hidden="true">
+        <span class="pa__key pa__key--a">Seq A</span>
+        <span class="pa__key pa__key--b">Seq B</span>
+        <span class="pa__key pa__key--shared">shared page</span>
+        <span class="pa__key pa__key--free">free</span>
+        <span class="pa__key pa__key--waste">reserved / wasted</span>
+      </div>
+
+      <div class="pa__cols">
+        <!-- Naive contiguous allocation -->
+        <div class="pa__col">
+          <h4 class="pa__h">Without paging — one contiguous slab per sequence</h4>
+          {naive.map((s) => (
+            <div class="pa__seq">
+              <span class={`pa__seq-lbl pa__seq-lbl--${s.seq.toLowerCase()}`}>Seq {s.seq}</span>
+              <span class="pa__slots">
+                {Array.from({ length: s.total }).map((_, i) => (
+                  <span class={`pa__slot ${i < s.used ? `pa__slot--${s.seq.toLowerCase()}` : 'pa__slot--waste'}`}></span>
+                ))}
+              </span>
+            </div>
+          ))}
+          <p class="pa__cap">Each sequence grabs one big block sized for the <b>max</b> length up
+          front. The unused slots sit <b>reserved and idle</b> — internal fragmentation. You run out
+          of memory long before it's actually full, so fewer requests fit on the GPU.</p>
+        </div>
+
+        <!-- PagedAttention -->
+        <div class="pa__col">
+          <h4 class="pa__h">With PagedAttention — fixed-size pages + a block table</h4>
+
+          <div class="pa__tables">
+            {tables.map((t) => (
+              <div class="pa__table">
+                <span class={`pa__seq-lbl pa__seq-lbl--${t.seq.toLowerCase()}`}>Seq {t.seq} block table</span>
+                <div class="pa__map">
+                  {t.rows.map((r) => (
+                    <span class="pa__maprow">
+                      <span class="pa__logical">L{r.l}</span>
+                      <span class="pa__mapto">→</span>
+                      <span class={`pa__phys ${r.shared ? 'pa__phys--shared' : `pa__phys--${t.seq.toLowerCase()}`}`}>#{r.p}{r.shared ? ' ⤳' : ''}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <span class="pa__seq-lbl pa__seq-lbl--pool">Physical KV pool (HBM)</span>
+          <div class="pa__pool">
+            {pool.map((b) => (
+              <span class={`pa__block pa__block--${b.owner}`}>
+                <span class="pa__block-id">#{b.id}</span>
+                <span class="pa__block-own">{b.owner === 'free' ? '·' : b.owner === 'shared' ? 'A+B' : b.owner}</span>
+              </span>
+            ))}
+          </div>
+          <p class="pa__cap">KV lives in <b>fixed-size pages scattered anywhere</b> in the pool,
+          indexed by a per-sequence <b>block table</b> — exactly like OS virtual→physical memory.
+          Allocate only what's used, grow <b>one page at a time</b>, and let an identical prefix
+          (block <b>#3</b>) be <b>shared</b> by both sequences instead of copied.</p>
+        </div>
+      </div>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .pa { margin: 0; }
+
+  .pa__legend { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+  .pa__key {
+    font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em; font-weight: 700;
+    text-transform: uppercase; padding: 0.15em 0.55em; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-faint);
+  }
+  .pa__key--a { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .pa__key--b { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .pa__key--shared { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+
+  .pa__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+  .pa__col { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-subtle); padding: 0.9rem 1rem; }
+  .pa__h { font-size: 0.8rem; font-weight: 650; color: var(--text); margin: 0 0 0.8rem; line-height: 1.35; }
+
+  .pa__seq { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; }
+  .pa__seq-lbl {
+    font-family: var(--font-mono); font-size: 0.64rem; font-weight: 700; letter-spacing: 0.03em;
+    flex: 0 0 auto;
+  }
+  .pa__seq-lbl--a { color: var(--accent); }
+  .pa__seq-lbl--b { color: var(--gpt-c2); }
+  .pa__seq-lbl--pool { color: var(--text-faint); display: block; margin: 0.9rem 0 0.4rem; }
+
+  .pa__slots { display: flex; gap: 0.2rem; flex-wrap: wrap; }
+  .pa__slot { width: 1.15rem; height: 1.15rem; border-radius: 3px; border: 1px solid var(--border-strong); background: var(--bg-elevated); }
+  .pa__slot--a { background: var(--accent); border-color: var(--accent); }
+  .pa__slot--b { background: var(--gpt-c2); border-color: var(--gpt-c2); }
+  .pa__slot--waste { background: repeating-linear-gradient(45deg, transparent, transparent 3px, var(--border) 3px, var(--border) 4px); border-style: dashed; }
+
+  .pa__tables { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 0.4rem; }
+  .pa__table { min-width: 0; }
+  .pa__map { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.35rem; }
+  .pa__maprow { display: flex; align-items: center; gap: 0.35rem; font-family: var(--font-mono); font-size: 0.66rem; }
+  .pa__logical { color: var(--text-muted); border: 1px solid var(--border); border-radius: 3px; padding: 0.05em 0.35em; }
+  .pa__mapto { color: var(--text-faint); }
+  .pa__phys { border-radius: 3px; padding: 0.05em 0.35em; font-weight: 700; border: 1px solid var(--border-strong); }
+  .pa__phys--a { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .pa__phys--b { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .pa__phys--shared { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+
+  .pa__pool { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem; }
+  .pa__block {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.1rem; padding: 0.4rem 0; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+  }
+  .pa__block-id { font-family: var(--font-mono); font-size: 0.56rem; color: var(--text-faint); }
+  .pa__block-own { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 700; color: var(--text-muted); }
+  .pa__block--a { border-color: var(--accent); background: var(--accent-soft); }
+  .pa__block--a .pa__block-own { color: var(--accent); }
+  .pa__block--b { border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .pa__block--b .pa__block-own { color: var(--gpt-c2); }
+  .pa__block--shared { border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+  .pa__block--shared .pa__block-own { color: var(--gpt-warn); }
+  .pa__block--free { border-style: dashed; }
+
+  .pa__cap { font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); margin: 0.9rem 0 0; }
+  .pa__cap b { color: var(--text); font-weight: 650; }
+
+  @media (max-width: 640px) {
+    .pa__cols { grid-template-columns: 1fr; }
+    .pa__tables { grid-template-columns: 1fr; }
+  }
+</style>

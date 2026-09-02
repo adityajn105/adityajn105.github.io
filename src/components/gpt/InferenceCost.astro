@@ -1,0 +1,15 @@
+---
+// InferenceCost — an interactive "why is decode memory-bandwidth-bound?" calculator
+// for the LLM-inference post. Pick a model, precision, batch, context, and GPU;
+// see weight bytes vs KV bytes read per decode step, per-token latency, and
+// throughput. Numbers are an illustrative bandwidth-bound lower bound.
+import '../../styles/gpt-widgets.css';
+---
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-inference-cost></div>
+  <slot />
+</figure>
+<script>
+  import { mountInferenceCost } from '../../scripts/gpt/inference.js';
+  document.querySelectorAll('[data-gpt-inference-cost]').forEach((el) => mountInferenceCost(el));
+</script>

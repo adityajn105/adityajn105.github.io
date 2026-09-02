@@ -1,0 +1,106 @@
+---
+// JourneyFlow — a static flow diagram of the query → next-token pipeline for the
+// LLM-inference post. Six numbered stages with arrows between them; the last four
+// are bracketed as "the per-token decode loop" with a loop-back to stage 3, since
+// that loop runs once per output token. No JS — styles in this component's own
+// scoped <style>, using the shared design tokens.
+import '../../styles/gpt-widgets.css';
+
+const steps = [
+  { n: 1, t: 'Tokenize', s: 'text → token IDs', phase: 'once' },
+  { n: 2, t: 'Embed', s: 'IDs → vectors (+ position)', phase: 'once' },
+  { n: 3, t: 'Forward pass', s: 'through every layer', phase: 'loop', heavy: true },
+  { n: 4, t: 'Logits → softmax', s: 'scores → probabilities', phase: 'loop' },
+  { n: 5, t: 'Sample', s: 'pick the next token', phase: 'loop' },
+  { n: 6, t: 'Detokenize', s: 'token → text', phase: 'loop' },
+];
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="jf" role="img" aria-label="Inference pipeline: tokenize, embed, then a per-token loop of forward pass, logits and softmax, sample, and detokenize, repeating for every output token.">
+      <div class="jf__lanes" aria-hidden="true">
+        <span class="jf__lane jf__lane--once">Once per prompt</span>
+        <span class="jf__lane jf__lane--loop">Repeats per output token ↺</span>
+      </div>
+
+      <ol class="jf__track">
+        {steps.map((step, i) => (
+          <>
+            <li class={`jf__step jf__step--${step.phase} ${step.heavy ? 'is-heavy' : ''}`}>
+              <span class="jf__num">{step.n}</span>
+              <span class="jf__t">{step.t}</span>
+              <span class="jf__s">{step.s}</span>
+              {step.heavy && <span class="jf__tag">bottleneck</span>}
+            </li>
+            {i < steps.length - 1 && <li class="jf__arrow" aria-hidden="true">→</li>}
+          </>
+        ))}
+      </ol>
+
+      <div class="jf__loopback" aria-hidden="true">
+        <span class="jf__loopback-line"></span>
+        <span class="jf__loopback-txt">↺&nbsp; append token → back to the forward pass, once per generated token</span>
+      </div>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .jf { margin: 0; }
+
+  .jf__lanes { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .jf__lane {
+    font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.04em;
+    text-transform: uppercase; font-weight: 700; padding: 0.15em 0.6em;
+    border-radius: 999px; border: 1px solid var(--border);
+  }
+  .jf__lane--once { color: var(--text-faint); background: var(--bg-elevated); flex: 0 0 auto; }
+  .jf__lane--loop { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); flex: 1 1 auto; }
+
+  .jf__track {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; align-items: stretch; flex-wrap: wrap; gap: 0.35rem;
+  }
+  .jf__step {
+    position: relative; display: flex; flex-direction: column; gap: 0.15rem;
+    flex: 1 1 8rem; min-width: 0; padding: 0.6rem 0.7rem 0.65rem;
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+  }
+  .jf__step--loop { border-top: 3px solid var(--accent); }
+  .jf__step--once { border-top: 3px solid var(--border-strong); }
+  .jf__step.is-heavy { background: var(--accent-soft); border-color: var(--accent); }
+
+  .jf__num {
+    font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700;
+    color: var(--text-faint); letter-spacing: 0.05em;
+  }
+  .jf__t { font-weight: 650; font-size: 0.84rem; color: var(--text); line-height: 1.25; }
+  .jf__s { font-size: 0.68rem; color: var(--text-muted); line-height: 1.35; }
+  .jf__tag {
+    margin-top: 0.2rem; align-self: flex-start;
+    font-family: var(--font-mono); font-size: 0.56rem; text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 700; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 999px; padding: 0.05em 0.45em;
+  }
+
+  .jf__arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint); font-size: 1rem; flex: 0 0 auto;
+  }
+
+  .jf__loopback { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
+  .jf__loopback-line { flex: 0 0 1.4rem; height: 0; border-top: 2px dashed var(--accent); }
+  .jf__loopback-txt {
+    font-family: var(--font-mono); font-size: 0.68rem; color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  @media (max-width: 640px) {
+    .jf__track { flex-direction: column; }
+    .jf__step { flex: 1 1 auto; }
+    .jf__arrow { transform: rotate(90deg); height: 0.9rem; }
+  }
+</style>

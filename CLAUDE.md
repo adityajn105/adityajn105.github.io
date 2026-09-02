@@ -112,16 +112,18 @@ site and **projects.adityajain.me** (the sibling repo `jackgriffin105.github.io`
   paths to absolute `https://adityajain.me/img/...` URLs (remote screenshot URLs pass
   through untouched) so cross-site consumers get working images. GitHub Pages serves it
   with `Access-Control-Allow-Origin: *`, so the cross-origin fetch just works.
-- **projects.adityajain.me** is a **pure consumer**: it `fetch()`es that feed at build
-  time and keeps **no** local project data or images. To change the project list or a
-  thumbnail, edit it **here** (`projects.ts` + `public/img/`), never there.
+- **projects.adityajain.me** is a **pure consumer**: it fetches that feed **live in
+  the browser on page load** (an inline `<script>` in its `index.astro`) and injects
+  the cards. It keeps **no** local project data or images. To change the project list
+  or a thumbnail, edit it **here** (`projects.ts` + `public/img/`), never there.
 
 **All project thumbnails live in this repo's `public/img/`.** Add new ones here.
 
-**Deploy order matters:** deploy **this** site first (so `/projects.json` is live), then
-projects.adityajain.me — its build **fails fast** if the feed is unreachable (by design;
-GitHub Pages then keeps its last good deploy). The consumer also rebuilds **weekly** via a
-`schedule` cron in its own `deploy.yml`, so it re-syncs even without a push here.
+**No deploy coordination needed.** Because the consumer fetches live client-side, a
+change here shows up on projects.adityajain.me the moment `/projects.json` is live —
+i.e. as soon as **this** site deploys, on the reader's next page load. There's no
+build-order dependency and no scheduled rebuild on the consumer; just publish here and
+the projects site reflects it automatically.
 
 ## Comments (Disqus)
 

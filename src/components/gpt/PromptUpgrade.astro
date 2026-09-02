@@ -1,0 +1,180 @@
+---
+// PromptUpgrade — a clickable "same task, asked two ways" panel for the
+// agentic-development field guide. Pick a task; see the vague ask, the steered
+// ask, and what actually changed. CSS-only interactivity: hidden radio inputs +
+// <label> nodes + `:checked ~` sibling reveals, so there is no JS file.
+// Styling follows the site design tokens and mirrors the other gpt widgets.
+import '../../styles/gpt-widgets.css';
+
+// Render inline `code` spans as <code>, but HTML-escape everything first so
+// literal angle brackets in the copy (e.g. `<html>`) become visible text and
+// never inject a live tag into the page via set:html.
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const fmt = (s) =>
+  escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+const tasks = [
+  {
+    id: 'fix',
+    label: 'Fix a bug',
+    sub: 'debugging',
+    vague: 'Fix the login bug.',
+    steered:
+      'Login fails silently when the email has a trailing space. Write a failing test that reproduces it first, then fix the trim in `normalizeEmail()` — and keep the existing error toast for genuinely invalid emails.',
+    why: 'You named the symptom, pointed at the likely site, demanded a failing test up front, and fenced off what *not* to touch. The agent now has both a target and a guardrail.',
+  },
+  {
+    id: 'tests',
+    label: 'Add tests',
+    sub: 'coverage',
+    vague: 'Add some tests.',
+    steered:
+      'Add unit tests for `parseRange()` covering the empty string, a single number, reversed bounds, and out-of-order input. Match the table-driven style already in `range_test.go`. Skip the private helpers.',
+    why: 'Named cases beat "some tests." Pointing at an existing test file hands it your house style to copy, so the output matches the repo instead of inventing a new convention.',
+  },
+  {
+    id: 'refactor',
+    label: 'Refactor',
+    sub: 'restructure',
+    vague: 'Clean up this file.',
+    steered:
+      'This 400-line component does data-fetching *and* rendering. Extract the fetching into a `useOrders()` hook, leave the JSX untouched, and make no behavior changes — the diff should read as a pure move. Run the existing tests after.',
+    why: '"Clean up" is a taste call the agent will guess at. "Pure move, no behavior change, tests still green" is a contract you can actually check.',
+  },
+  {
+    id: 'feature',
+    label: 'Build a feature',
+    sub: 'new work',
+    vague: 'Add dark mode.',
+    steered:
+      'Add a dark theme toggled by a `data-theme` attribute on `<html>`, persisted to localStorage, applied before first paint so there is no flash. Reuse the CSS-variable tokens in `global.css` — don\'t hard-code colors. Show me the plan before you edit anything.',
+    why: 'You gave the mechanism, the constraints, and the thing to reuse — then asked for a plan first, so you catch a wrong approach before it writes 200 lines you have to unwind.',
+  },
+];
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="pu">
+      {tasks.map((t, i) => (
+        <input
+          type="radio"
+          name="prompt-upgrade"
+          id={`pu-${t.id}`}
+          class="pu__radio"
+          checked={i === 0}
+        />
+      ))}
+
+      <div class="pu__flow" role="tablist" aria-label="Tasks">
+        {tasks.map((t) => (
+          <label class="pu__node" for={`pu-${t.id}`}>
+            <span class="pu__node-t">{t.label}</span>
+            <span class="pu__node-s">{t.sub}</span>
+          </label>
+        ))}
+      </div>
+
+      <div class="pu__panels">
+        {tasks.map((t) => (
+          <div class="pu__panel" data-for={t.id}>
+            <p class="pu__row pu__row--vague">
+              <span class="pu__tag">Vague</span>
+              <span class="pu__body" set:html={fmt(t.vague)} />
+            </p>
+            <p class="pu__row pu__row--steered">
+              <span class="pu__tag">Steered</span>
+              <span class="pu__body" set:html={fmt(t.steered)} />
+            </p>
+            <p class="pu__why"><span class="pu__why-k">Why it lands →</span> <span set:html={fmt(t.why)} /></p>
+          </div>
+        ))}
+      </div>
+
+      <p class="pu__hint">Click a task. Same goal, two prompts — the second gives the loop a target it can hit and a way to check itself.</p>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .pu { margin: 0; }
+  .pu__radio { position: absolute; opacity: 0; pointer-events: none; }
+
+  .pu__flow {
+    display: flex; align-items: stretch; flex-wrap: wrap;
+    gap: 0.4rem 0.5rem; margin-bottom: 1rem;
+  }
+  .pu__node {
+    display: flex; flex-direction: column; gap: 0.1rem; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.8rem;
+    transition: all 0.18s var(--ease); flex: 1 1 auto; min-width: 0;
+  }
+  .pu__node:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .pu__node-t { font-weight: 650; font-size: 0.9rem; color: var(--text); }
+  .pu__node-s {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+
+  .pu__panels { position: relative; }
+  .pu__panel { display: none; }
+  .pu__panel .pu__row {
+    display: grid; grid-template-columns: 5.5rem 1fr; gap: 0.7rem; align-items: baseline;
+    margin: 0; padding: 0.7rem 0.9rem; border: 1px solid var(--border);
+    background: var(--bg-subtle);
+  }
+  .pu__panel .pu__row--vague { border-left: 3px solid var(--gpt-warn); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .pu__panel .pu__row--steered { border-left: 3px solid var(--accent); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+  .pu__tag {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .pu__row--vague .pu__tag { color: var(--gpt-warn); }
+  .pu__row--steered .pu__tag { color: var(--accent); }
+  .pu__body { font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); }
+  .pu__row--steered .pu__body { color: var(--text); }
+  .pu__body code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .pu__why { font-size: 0.84rem; line-height: 1.6; color: var(--text-muted); margin: 0.8rem 0 0; }
+  .pu__why-k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.03em; text-transform: uppercase; color: var(--gpt-c2); font-weight: 700; }
+  .pu__why code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .pu__hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.9rem 0 0; }
+
+  /* CSS-only wiring: the checked task highlights its node and reveals its panel */
+  #pu-fix:checked      ~ .pu__flow label[for="pu-fix"],
+  #pu-tests:checked    ~ .pu__flow label[for="pu-tests"],
+  #pu-refactor:checked ~ .pu__flow label[for="pu-refactor"],
+  #pu-feature:checked  ~ .pu__flow label[for="pu-feature"] {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm);
+  }
+  #pu-fix:checked      ~ .pu__panels .pu__panel[data-for="fix"],
+  #pu-tests:checked    ~ .pu__panels .pu__panel[data-for="tests"],
+  #pu-refactor:checked ~ .pu__panels .pu__panel[data-for="refactor"],
+  #pu-feature:checked  ~ .pu__panels .pu__panel[data-for="feature"] {
+    display: block; animation: pu-fade 0.25s var(--ease);
+  }
+  @keyframes pu-fade { from { opacity: 0; transform: translateY(4px); } }
+
+  /* keyboard focus visibility (radios are visually hidden) */
+  #pu-fix:focus-visible      ~ .pu__flow label[for="pu-fix"],
+  #pu-tests:focus-visible    ~ .pu__flow label[for="pu-tests"],
+  #pu-refactor:focus-visible ~ .pu__flow label[for="pu-refactor"],
+  #pu-feature:focus-visible  ~ .pu__flow label[for="pu-feature"] {
+    outline: 2.5px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .pu__flow { flex-direction: column; align-items: stretch; }
+    .pu__panel .pu__row { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>

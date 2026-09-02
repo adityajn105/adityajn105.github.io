@@ -1,0 +1,257 @@
+---
+// TechniqueMap — a clickable scorecard of inference-optimization techniques for
+// the LLM-inference post. Pick a technique; see what it targets (latency /
+// throughput / memory), how it works in one line, and what it costs. CSS-only:
+// hidden radios + <label> + `:checked ~` reveals, styles in this component's own
+// scoped <style> (mirrors LlmStackMap / PromptUpgrade — no JS file).
+import '../../styles/gpt-widgets.css';
+
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const fmt = (s) => escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+// targets: which of the three axes a technique moves. L = latency (time to a
+// token), T = throughput (tokens/sec across all users), M = memory footprint.
+const techniques = [
+  {
+    id: 'kv-cache',
+    label: 'KV Cache',
+    sub: 'the default',
+    targets: ['L', 'T'],
+    how: 'Store each token\'s K,V once; every later token reuses them instead of recomputing. Turns per-token attention work from `O(n)` into `O(1)`.',
+    cost: 'Memory: the cache grows linearly with context × batch and lives in HBM — it *becomes* the bottleneck at long context.',
+  },
+  {
+    id: 'gqa',
+    label: 'GQA / MQA',
+    sub: 'shrink the cache',
+    targets: ['M', 'L'],
+    how: 'Let multiple query heads share one set of K,V heads, so the cache stores far fewer K,V vectors per token.',
+    cost: 'A small quality hit vs full multi-head attention — usually negligible, and baked in at train time (not a knob at serving).',
+  },
+  {
+    id: 'paged',
+    label: 'PagedAttention',
+    sub: 'vLLM',
+    targets: ['M', 'T'],
+    how: 'Store the KV cache in fixed-size pages like OS virtual memory, so sequences grow without contiguous allocation and pages can be shared.',
+    cost: 'Implementation complexity — a custom attention kernel and a paged allocator. Nearly eliminates cache fragmentation.',
+  },
+  {
+    id: 'flash',
+    label: 'FlashAttention',
+    sub: 'IO-aware kernel',
+    targets: ['L', 'M'],
+    how: 'Fuse attention into one kernel that never materializes the full `n×n` score matrix in HBM — it tiles and keeps work in fast SRAM.',
+    cost: 'None to accuracy (exact attention). Biggest win in the compute-bound prefill / long sequences.',
+  },
+  {
+    id: 'continuous-batching',
+    label: 'Continuous Batching',
+    sub: 'in-flight',
+    targets: ['T'],
+    how: 'Add and evict sequences from the running batch every step instead of waiting for the whole batch to finish — the weight read is shared across all of them.',
+    cost: 'Serving complexity; individual latency can jitter as the batch composition shifts. Massive throughput gain.',
+  },
+  {
+    id: 'speculative',
+    label: 'Speculative Decoding',
+    sub: 'draft + verify',
+    targets: ['L'],
+    how: 'A small draft model proposes several tokens; the big model verifies them all in one parallel pass, accepting the longest correct prefix.',
+    cost: 'Extra compute for the draft + a memory-bound big-model pass per chunk. Output is provably identical to the big model — lossless.',
+  },
+  {
+    id: 'quant',
+    label: 'Quantization',
+    sub: 'fewer bytes',
+    targets: ['M', 'L'],
+    how: 'Store weights (and optionally the KV cache) in 8- or 4-bit instead of 16-bit, so there are fewer bytes to haul from HBM per token.',
+    cost: 'Some accuracy loss that grows as you go lower; needs calibration. See the fine-tuning post for the memory math.',
+  },
+  {
+    id: 'distill',
+    label: 'Knowledge Distillation',
+    sub: 'smaller student',
+    targets: ['L', 'T', 'M'],
+    how: 'Train a small "student" model to mimic a big "teacher," then serve the student — fewer params means fewer bytes and FLOPs per token.',
+    cost: 'A capability ceiling below the teacher, plus the up-front training cost. A different model, not a serving toggle.',
+  },
+  {
+    id: 'tensor',
+    label: 'Tensor Parallelism',
+    sub: 'split each layer',
+    targets: ['L', 'M'],
+    how: 'Shard each weight matrix across GPUs; every GPU does part of every layer and they all-reduce the result. Cuts per-token latency for models too big for one GPU.',
+    cost: 'Heavy per-layer communication — needs fast interconnect (NVLink). Usually kept within a single node.',
+  },
+  {
+    id: 'pipeline',
+    label: 'Pipeline Parallelism',
+    sub: 'split by layer',
+    targets: ['M', 'T'],
+    how: 'Put different layers on different GPUs and stream micro-batches through the stages, so a model far larger than one GPU still fits.',
+    cost: 'Pipeline "bubbles" — idle stages at the start/end — and added latency. Communication is light (only at stage boundaries).',
+  },
+  {
+    id: 'moe',
+    label: 'Mixture of Experts',
+    sub: 'sparse activation',
+    targets: ['L', 'T'],
+    how: 'Route each token to only a couple of expert sub-networks, so a model with huge total params activates only a fraction per token.',
+    cost: 'Total memory stays large (all experts resident); routing adds complexity and can imbalance load across GPUs.',
+  },
+];
+
+const AXES = { L: 'Latency', T: 'Throughput', M: 'Memory' };
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="tm">
+      {techniques.map((t, i) => (
+        <input
+          type="radio"
+          name="technique-map"
+          id={`tm-${t.id}`}
+          class="tm__radio"
+          checked={i === 0}
+        />
+      ))}
+
+      <div class="tm__grid" role="tablist" aria-label="Inference techniques">
+        {techniques.map((t) => (
+          <label class="tm__node" for={`tm-${t.id}`}>
+            <span class="tm__node-t">{t.label}</span>
+            <span class="tm__node-s">{t.sub}</span>
+          </label>
+        ))}
+      </div>
+
+      <div class="tm__panels">
+        {techniques.map((t) => (
+          <div class="tm__panel" data-for={t.id}>
+            <div class="tm__targets">
+              <span class="tm__targets-k">Targets</span>
+              {['L', 'T', 'M'].map((ax) => (
+                <span class={`tm__chip ${t.targets.includes(ax) ? 'is-on' : ''} tm__chip--${ax}`}>
+                  {AXES[ax]}
+                </span>
+              ))}
+            </div>
+            <p class="tm__row"><span class="tm__row-k">How</span> <span set:html={fmt(t.how)} /></p>
+            <p class="tm__row tm__row--cost"><span class="tm__row-k">Cost</span> <span set:html={fmt(t.cost)} /></p>
+          </div>
+        ))}
+      </div>
+
+      <p class="tm__hint">Click a technique. <b>Targets</b> shows which axis it moves — latency, throughput, or memory. Almost nothing helps all three for free.</p>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .tm { margin: 0; }
+  .tm__radio { position: absolute; opacity: 0; pointer-events: none; }
+
+  .tm__grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 0.4rem; margin-bottom: 1rem;
+  }
+  .tm__node {
+    display: flex; flex-direction: column; gap: 0.1rem; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.7rem;
+    transition: all 0.18s var(--ease); min-width: 0;
+  }
+  .tm__node:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .tm__node-t { font-weight: 650; font-size: 0.85rem; color: var(--text); }
+  .tm__node-s {
+    font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+
+  .tm__panels { position: relative; }
+  .tm__panel { display: none; }
+  .tm__panel {
+    border: 1px solid var(--border); background: var(--bg-subtle);
+    border-radius: var(--radius-sm); padding: 0.9rem 1rem;
+  }
+
+  .tm__targets { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.7rem; }
+  .tm__targets-k {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 700; color: var(--text-faint); margin-right: 0.2rem;
+  }
+  .tm__chip {
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+    padding: 0.12em 0.6em; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-faint); background: var(--bg-elevated);
+    opacity: 0.45; transition: all 0.18s var(--ease);
+  }
+  .tm__chip.is-on { opacity: 1; }
+  .tm__chip--L.is-on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .tm__chip--T.is-on { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .tm__chip--M.is-on { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+
+  .tm__row { font-size: 0.9rem; line-height: 1.65; color: var(--text-muted); margin: 0.35rem 0 0; }
+  .tm__row-k {
+    font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.04em;
+    text-transform: uppercase; font-weight: 700; color: var(--text); margin-right: 0.35rem;
+  }
+  .tm__row--cost .tm__row-k { color: var(--gpt-warn); }
+  .tm__row code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .tm__hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.9rem 0 0; }
+
+  /* CSS-only wiring: checked technique highlights its node and reveals its panel */
+  #tm-kv-cache:checked ~ .tm__grid label[for="tm-kv-cache"],
+  #tm-gqa:checked ~ .tm__grid label[for="tm-gqa"],
+  #tm-paged:checked ~ .tm__grid label[for="tm-paged"],
+  #tm-flash:checked ~ .tm__grid label[for="tm-flash"],
+  #tm-continuous-batching:checked ~ .tm__grid label[for="tm-continuous-batching"],
+  #tm-speculative:checked ~ .tm__grid label[for="tm-speculative"],
+  #tm-quant:checked ~ .tm__grid label[for="tm-quant"],
+  #tm-distill:checked ~ .tm__grid label[for="tm-distill"],
+  #tm-tensor:checked ~ .tm__grid label[for="tm-tensor"],
+  #tm-pipeline:checked ~ .tm__grid label[for="tm-pipeline"],
+  #tm-moe:checked ~ .tm__grid label[for="tm-moe"] {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm);
+  }
+  #tm-kv-cache:checked ~ .tm__panels .tm__panel[data-for="kv-cache"],
+  #tm-gqa:checked ~ .tm__panels .tm__panel[data-for="gqa"],
+  #tm-paged:checked ~ .tm__panels .tm__panel[data-for="paged"],
+  #tm-flash:checked ~ .tm__panels .tm__panel[data-for="flash"],
+  #tm-continuous-batching:checked ~ .tm__panels .tm__panel[data-for="continuous-batching"],
+  #tm-speculative:checked ~ .tm__panels .tm__panel[data-for="speculative"],
+  #tm-quant:checked ~ .tm__panels .tm__panel[data-for="quant"],
+  #tm-distill:checked ~ .tm__panels .tm__panel[data-for="distill"],
+  #tm-tensor:checked ~ .tm__panels .tm__panel[data-for="tensor"],
+  #tm-pipeline:checked ~ .tm__panels .tm__panel[data-for="pipeline"],
+  #tm-moe:checked ~ .tm__panels .tm__panel[data-for="moe"] {
+    display: block; animation: tm-fade 0.25s var(--ease);
+  }
+  @keyframes tm-fade { from { opacity: 0; transform: translateY(4px); } }
+
+  #tm-kv-cache:focus-visible ~ .tm__grid label[for="tm-kv-cache"],
+  #tm-gqa:focus-visible ~ .tm__grid label[for="tm-gqa"],
+  #tm-paged:focus-visible ~ .tm__grid label[for="tm-paged"],
+  #tm-flash:focus-visible ~ .tm__grid label[for="tm-flash"],
+  #tm-continuous-batching:focus-visible ~ .tm__grid label[for="tm-continuous-batching"],
+  #tm-speculative:focus-visible ~ .tm__grid label[for="tm-speculative"],
+  #tm-quant:focus-visible ~ .tm__grid label[for="tm-quant"],
+  #tm-distill:focus-visible ~ .tm__grid label[for="tm-distill"],
+  #tm-tensor:focus-visible ~ .tm__grid label[for="tm-tensor"],
+  #tm-pipeline:focus-visible ~ .tm__grid label[for="tm-pipeline"],
+  #tm-moe:focus-visible ~ .tm__grid label[for="tm-moe"] {
+    outline: 2.5px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .tm__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

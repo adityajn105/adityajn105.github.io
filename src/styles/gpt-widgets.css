@@ -521,3 +521,59 @@
   .gpt-root .ev-metrics { grid-template-columns: 1fr; }
   .gpt-root .ev-span__meta { padding-left: 0; }
 }
+
+/* =========================================================================
+   LLM inference post — cost calculator + KV-cache decode visualizer
+   ========================================================================= */
+
+/* ---- inference cost calculator ---------------------------------------- */
+.gpt-root .inf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin: 0.4rem 0 0.2rem; }
+.gpt-root .inf-stat { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.8rem; text-align: center; background: var(--bg-subtle); }
+.gpt-root .inf-stat--hl { border-color: var(--accent); background: var(--accent-soft); }
+.gpt-root .inf-stat__k { display: block; font-family: var(--font-mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); }
+.gpt-root .inf-stat__v { display: block; font-size: 1.5rem; font-weight: 700; color: var(--text); margin: 0.15rem 0; line-height: 1.1; }
+.gpt-root .inf-stat--hl .inf-stat__v { color: var(--accent); }
+.gpt-root .inf-stat__u { display: block; font-size: 0.64rem; color: var(--text-faint); line-height: 1.4; }
+.gpt-root .inf-verdict { font-size: 0.86rem; line-height: 1.65; color: var(--text-muted); margin: 1rem 0 0;
+  border-left: 3px solid var(--accent); padding: 0.2rem 0 0.2rem 0.9rem; }
+.gpt-root .inf-verdict b { color: var(--text); font-weight: 650; }
+
+/* ---- KV-cache decode visualizer --------------------------------------- */
+.gpt-root .kv__bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 1rem; }
+.gpt-root .kv__toggle { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }
+.gpt-root .kv__mode { border: none; border-radius: 0; transform: none !important; }
+.gpt-root .kv__mode + .kv__mode { border-left: 1px solid var(--border-strong); }
+.gpt-root .kv__mode.is-on { background: var(--accent); color: var(--accent-contrast); }
+.gpt-root .kv__ctrls { display: inline-flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.gpt-root .kv__progress { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); }
+
+.gpt-root .kv__label { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); margin: 0.9rem 0 0.4rem; }
+.gpt-root .kv__strip { display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 2.4rem; align-items: center; }
+
+.gpt-root .kv-cell { display: inline-flex; align-items: center; justify-content: center; min-width: 2.2rem; height: 2.2rem;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-elevated);
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); transition: all 0.25s var(--ease); }
+.gpt-root .kv-cell.is-recompute { border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 15%, transparent); color: var(--gpt-warn); }
+.gpt-root .kv-cell.is-cached { border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); color: var(--gpt-c2); }
+.gpt-root .kv-cell.is-new { border-color: var(--accent); background: var(--accent); color: var(--accent-contrast); transform: translateY(-2px); }
+
+.gpt-root .kv-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 2.6rem; height: 1.9rem; padding: 0 0.5rem;
+  border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); background: var(--bg-subtle);
+  font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-faint); transition: all 0.25s var(--ease); }
+.gpt-root .kv-slot.is-filled { border-style: solid; border-color: var(--gpt-c2); color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 10%, transparent); }
+.gpt-root .kv-slot.is-new { border-style: solid; border-color: var(--accent); color: var(--accent); background: var(--accent-soft); transform: translateY(-2px); }
+.gpt-root .kv-slot--empty { flex: 1; min-width: 100%; color: var(--text-faint); font-style: normal; }
+
+.gpt-root .kv__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1.1rem 0 0; }
+.gpt-root .kv-stat { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.7rem; text-align: center; background: var(--bg-subtle); }
+.gpt-root .kv-stat--hl { border-color: var(--accent); background: var(--accent-soft); }
+.gpt-root .kv-stat__k { display: block; font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); }
+.gpt-root .kv-stat__v { display: block; font-size: 1.4rem; font-weight: 700; color: var(--text); margin-top: 0.1rem; }
+.gpt-root .kv-stat--hl .kv-stat__v { color: var(--accent); }
+.gpt-root .kv__note { font-size: 0.84rem; line-height: 1.65; color: var(--text-muted); margin: 1rem 0 0; }
+.gpt-root .kv__note b { color: var(--text); font-weight: 650; }
+
+@media (max-width: 640px) {
+  .gpt-root .inf-stats { grid-template-columns: repeat(2, 1fr); }
+  .gpt-root .kv__stats { grid-template-columns: 1fr; }
+}

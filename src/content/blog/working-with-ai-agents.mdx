@@ -1,0 +1,208 @@
+---
+title: "How to Actually Work With AI Agents: A Field Guide"
+description: "The bottleneck in agentic development isn't the model — it's you. A practical field guide to prompting that lands, engineering the context window, the plan → act → verify loop, and the modern tooling (MCP, subagents, skills, memory) that separates people who ship with agents from people who fight them."
+pubDate: 2026-09-10
+tags: ["Agents", "LLM", "Prompting", "Productivity"]
+---
+
+import PromptUpgrade from '../../components/gpt/PromptUpgrade.astro';
+
+I've spent the last stretch [building LLM systems from the inside out](/blogs/agents-from-scratch.html) —
+a RAG pipeline, a ReAct agent, a fine-tuned model, an eval harness, a shipped chatbot. Somewhere in
+there the more useful skill turned out not to be *building* agents but **working with** them: sitting
+across from a capable coding agent all day and getting real, mergeable work out of it.
+
+That skill is weirdly under-documented. There's a pile of "10 prompt hacks" listicles and a pile of
+deep papers, and almost nothing in between about the *craft* — how to actually drive one of these
+things when your job is to ship. This is my field guide. It assumes you already know [what an agent
+is under the hood](/blogs/agents-from-scratch.html) (a `while` loop around a model, plus a protocol
+for calling tools) and skips straight to using one well.
+
+The single reframing that changes everything: **you are not chatting with a bot. You are supervising
+an autonomous loop.** Everything below follows from taking that seriously.
+
+The model is only one piece of that. Around it sits what Lilian Weng calls the
+[**harness**](https://lilianweng.github.io/posts/2026-07-04-harness/) — the loop, the tools, the
+memory, and the context management that decide how the model thinks, acts, and remembers. You don't
+retrain the model between tasks; you tune the harness. Getting good with agents *is* getting good at
+shaping that harness — and the four things below (prompting, context, the loop, the tooling) are the
+knobs.
+
+## Prompting: give the loop a target it can hit
+
+The most common mistake is treating the prompt like a search query — a few keywords and a hope. A
+good prompt is closer to a **work order**: it says what "done" looks like, hands over the context the
+agent can't see, and fences off what not to touch. Same task, two ways:
+
+<PromptUpgrade>
+  <p class="figure__cap">Every "Steered" version does the same four things: names the <b>real
+  symptom</b>, points at the <b>likely site</b>, states a <b>checkable definition of done</b>, and
+  <b>fences off</b> what to leave alone. None of it is cleverness — it's just refusing to make the
+  agent guess.</p>
+</PromptUpgrade>
+
+The pattern underneath all four:
+
+- **Specificity beats politeness.** "Please help me improve this if you could" gives the model
+  nothing to aim at. "Extract the fetching into a `useOrders()` hook, no behavior change" does.
+  You're not being rude by being precise — you're doing the agent's hardest job for it.
+- **Show, don't tell.** "Match the style in `range_test.go`" outperforms three paragraphs describing
+  your style, because the model is extraordinary at pattern-matching off a concrete example and
+  mediocre at inferring taste from adjectives. Point at code that already exists.
+- **Give it the *why*, not just the *what*.** "Trim the email — users paste from password managers
+  and get a trailing space" lets the agent generalize correctly to the cases you didn't list. A bare
+  instruction gets you a literal, brittle fix.
+- **State the definition of done.** "The diff should read as a pure move and the existing tests
+  should still pass" is a target the agent — and you — can verify. "Clean it up" is a taste call it
+  will guess at, usually wrong.
+- **Fence the blast radius.** "Don't touch the error-handling path" / "skip the private helpers"
+  saves you from a 600-line diff where you wanted 6.
+
+None of this requires magic words. It requires you to have actually decided what you want before you
+hit enter — which is the part people skip.
+
+## Context engineering: the real 2026 skill
+
+Prompting is what you type. **Context engineering is managing everything the model can see** — and
+it's the skill that most separates people who ship with agents from people who fight them.
+
+The model has no memory between turns; its entire universe is the context window. Two failure modes
+follow, and they pull in opposite directions:
+
+- **Too little context** and it invents — guessing at your conventions, your file layout, the API you
+  actually use.
+- **Too much context** and it drowns. A window stuffed with three tangents, a stale plan, and 4,000
+  lines of a file it read once will produce worse answers than a clean one. Long sessions *rot*:
+  early mistakes and dead ends stay in view and quietly steer everything after.
+
+So the job is to keep the window **full of the right things and empty of everything else**. In
+practice:
+
+- **Front-load the real context.** Paste the failing test, the error, the relevant file, the
+  constraint — before the agent has to go hunting or guessing. A minute of setup beats five minutes
+  of it exploring the wrong subtree.
+- **Offload research to subagents.** When a task needs a wide search — "find every call site of this
+  function," "figure out how auth flows through this repo" — hand it to a **subagent**. It burns its
+  own context window doing the messy exploration and hands back a clean summary, so your main thread
+  stays focused on the decision, not the file dumps. This is the highest-leverage habit I've picked
+  up: one task per subagent, results only.
+- **Plan before you build.** For anything non-trivial, make the agent produce a plan *first* and
+  approve it before it edits. A wrong approach caught in a plan costs you a sentence; caught after 200
+  lines it costs you an unwind. This is exactly why "show me the plan before you edit" was in the
+  dark-mode prompt above.
+- **Start fresh when the thread turns.** If you've pivoted to a new problem, don't drag the old
+  transcript along. A clean session with a tight brief beats a long one carrying scar tissue.
+- **Write down what should persist.** Durable facts — conventions, architecture decisions, "we use X
+  not Y" — belong in a **memory** or a project file the agent reads every session, not re-explained
+  each time and lost when the window scrolls. The strongest setups treat the **file system as
+  memory**: the agent writes plans, logs, and findings to disk and reads them back, so the working
+  context stays small while the durable record lives *outside* the window instead of clogging it.
+
+If prompting is aiming the loop, context engineering is controlling what the loop can see while it
+runs. Get this right and mediocre prompts still work; get it wrong and even great prompts fail.
+
+## The loop in practice: plan → act → verify
+
+Working with an agent is its own loop, wrapped around the agent's internal one:
+
+> **Plan** what you want → let it **act** → **verify** the result → correct and repeat.
+
+This is the quiet shift in agentic development: the leverage has moved from crafting the one perfect
+prompt to designing the *loop the prompt runs inside* — **workflow over wording**. A mediocre prompt
+inside a plan → act → verify loop beats a beautiful prompt fired once and trusted.
+
+The step everyone under-invests in is the last one. An agent's output is **plausible by
+construction** — it's optimized to *look* right, which is precisely why looking at it isn't enough. A
+staff engineer wouldn't merge a teammate's PR on vibes; don't merge the agent's on vibes either.
+
+Verify at the level that actually catches problems:
+
+- **Run the tests. Read the diff.** Not "does the explanation sound reasonable" — does the code
+  compile, pass, and do what you asked. If there were no tests, that failing-test-first instruction
+  from earlier just paid off.
+- **Diff behavior, not just text.** For a refactor, the question is "does it still do the same thing,"
+  which a green test suite answers and a code-read doesn't.
+- **Ask the staff-engineer question.** *Would someone senior approve this in review?* If you can't
+  answer because you don't understand the change, that's the signal to slow down — not to merge and
+  hope.
+- **When something goes sideways, stop and re-plan.** Don't keep pushing a confused agent with "no,
+  try again" five times. Back up, figure out what context it's missing or what you asked ambiguously,
+  and restate. Thrashing is almost always a context problem wearing a prompt costume.
+
+The uncomfortable truth: **the agent moves the bottleneck onto you.** It can write code faster than
+you can carefully read it, so your review discipline is now the constraint on quality. That's a good
+trade — but only if you actually do the reviewing. (If you're shipping an LLM *product*, the same
+discipline scales up into a real [eval and observability](/blogs/evaluating-llm-apps.html) setup:
+the same instinct, automated.)
+
+## Modern tools & skills: what's actually worth learning
+
+The tooling around agents has consolidated fast. The pieces that earn their keep:
+
+| Tool | What it does | When to reach for it |
+|------|--------------|----------------------|
+| **MCP** (Model Context Protocol) | A standard plug for tools — expose a capability once, any agent can use it | Giving agents real actions: query a DB, hit an internal API, search your docs |
+| **Subagents** | Spawn a focused agent for one task; it returns a summary | Wide research, parallel work, anything that would bloat your main context |
+| **Skills / slash commands** | Packaged, reusable prompts + workflows you invoke by name | A multi-step process you run often (review a PR, cut a release, scaffold a module) |
+| **Custom agents** | An agent preloaded with a role, instructions, and a tool set | A recurring *kind* of task with its own rules (a reviewer, a debugger, a researcher) |
+| **Memory / project files** | Durable facts the agent reads every session | Conventions and decisions that should never be re-explained |
+
+Two of these deserve a note because they're the ones people underuse:
+
+**MCP** is the quiet unlock. [I covered it from the tool side](/blogs/agents-from-scratch.html) — it
+turns "a function wired into one app" into "a capability any agent can discover and call." In practice
+that means your agent stops being a text generator and starts being something that can *act* on your
+systems: read the ticket, query the metrics, open the PR. If your agent can only talk, you haven't
+plugged in the tools yet.
+
+**Skills and custom agents** are how you stop re-typing yourself. The first time you write a careful
+prompt for "review this PR the way our team does," you've done real work — so capture it. A skill or a
+custom agent turns that one-off into a `/command` you and your teammates fire in one line, with the
+context and the guardrails baked in. It's the difference between a sharp tool you rebuild every
+morning and one that stays sharp on the shelf.
+
+You don't need all of it on day one. The progression that worked for me: **prompt well → engineer
+context → add tools (MCP) → package the repeatable stuff (skills, agents) → persist what's durable
+(memory).** Each step is only worth taking once the previous one is a habit.
+
+## Anti-patterns to unlearn
+
+The failure modes are consistent enough to name:
+
+- **Vibe-merging.** Accepting output because it reads well and the story is convincing. Plausible ≠
+  correct; that gap is the whole reason to verify.
+- **The wall-of-text prompt.** One giant paragraph mixing three tasks, no priority, no definition of
+  done. Split it. One clear objective per pass beats a manifesto.
+- **No plan on hard work.** Letting the agent free-solo a big change and discovering the wrong
+  architecture 300 lines in. Plan first; approve; then build.
+- **Letting context rot.** Grinding on a 90-minute thread carrying every dead end. When it's confused,
+  the fix is usually a fresh, well-framed start — not a sixth "try again."
+- **Trusting instead of steering.** Treating the agent as an oracle rather than a fast, capable,
+  literal-minded teammate who needs a clear brief and a code review. It is the second thing. Manage it
+  like the second thing.
+
+## Key takeaways
+
+- **You're supervising a loop, not chatting.** Aim it, watch it, check its work. Every habit here is
+  a corollary of that.
+- **A prompt is a work order:** the real symptom, the likely site, a checkable definition of done, and
+  a fence around what not to touch. Show, don't tell.
+- **Context engineering is the skill.** Keep the window full of the right things and empty of the
+  rest — front-load context, offload research to subagents, plan before building, start fresh when
+  the thread turns.
+- **Verify like a staff engineer.** Run the tests, read the diff, diff *behavior*. The bottleneck is
+  now your review, so actually review.
+- **Learn the tooling in order:** prompt → context → MCP tools → skills & custom agents → memory.
+  Package the repeatable stuff so you stop rebuilding your tools each morning.
+
+## Go deeper
+
+- [How AI Agents Actually Work: ReAct from scratch](/blogs/agents-from-scratch.html) — the loop and the tool protocol this guide sits on top of.
+- [Evaluating LLM Apps](/blogs/evaluating-llm-apps.html) — turning "does this look right?" into real, automated verification.
+- [Building the Chatbot on This Site](/blogs/building-a-portfolio-chatbot.html) — MCP, tools, and an agent wired together in a shipped product.
+- [Model Context Protocol](https://modelcontextprotocol.io/) — the open standard for giving agents real actions.
+- Lilian Weng, [*Harness Engineering for Self-Improvement*](https://lilianweng.github.io/posts/2026-07-04-harness/) — the harness as the real unit of design, and where self-improving agents go next.
+- Chip Huyen, [*Common Pitfalls Building GenAI Apps*](https://huyenchip.com/2025/01/16/ai-engineering-pitfalls.html) — the companion at the *product* altitude: when you're shipping an AI feature, not just driving an agent.
+
+*An agent is only as good as the loop you wrap around it. The model keeps getting better on its own;
+the supervision is the part that's yours to get good at.*
