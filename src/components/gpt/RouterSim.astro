@@ -1,0 +1,15 @@
+---
+// RouterSim — right-size the model to the query. Drag the "how hard is your
+// traffic" slider: a router splits requests across small / mid / frontier
+// tiers and is priced against always-cheap (fails hard work) and
+// always-frontier (overpays for easy work). Numbers are illustrative.
+import '../../styles/gpt-widgets.css';
+---
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-router-sim></div>
+  <slot />
+</figure>
+<script>
+  import { mountRouterSim } from '../../scripts/gpt/llm-efficiency.js';
+  document.querySelectorAll('[data-gpt-router-sim]').forEach((el) => mountRouterSim(el));
+</script>

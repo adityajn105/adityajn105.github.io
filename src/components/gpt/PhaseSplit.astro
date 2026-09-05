@@ -1,0 +1,15 @@
+---
+// PhaseSplit — one task, split across model tiers by phase. Assign each phase
+// (plan / implement / review) a tier from the dropdowns and compare the blended
+// cost against sending the whole task to a frontier model. Reuses the RouterSim
+// (.rs-) bar/stat styles plus its own .ps- controls. Numbers are illustrative.
+import '../../styles/gpt-widgets.css';
+---
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-phase-split></div>
+  <slot />
+</figure>
+<script>
+  import { mountPhaseSplit } from '../../scripts/gpt/llm-efficiency.js';
+  document.querySelectorAll('[data-gpt-phase-split]').forEach((el) => mountPhaseSplit(el));
+</script>

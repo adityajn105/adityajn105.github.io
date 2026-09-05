@@ -1,0 +1,231 @@
+---
+// TaskModelMatch — a clickable "which model tier for which job" catalog. Pick a
+// task; see the recommended tier (small / mid / frontier), why, and a practical
+// tip. CSS-only: hidden radios + <label> + `:checked ~` reveals, styles in this
+// component's own scoped <style> (mirrors TechniqueMap — no JS file). The tier
+// colors match the RouterSim widget so the two read as one system.
+import '../../styles/gpt-widgets.css';
+
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const fmt = (s) => escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+// tier: small = fast/cheap, mid = the workhorse, frontier = reasoning/top-tier.
+const tasks = [
+  {
+    id: 'autocomplete',
+    label: 'Code autocomplete',
+    sub: 'inline suggestions',
+    tier: 'small',
+    why: 'It fires on every keystroke and must return in tens of milliseconds. The task is local and low-ambiguity — a small, fast model is not a compromise here, it is the right tool.',
+    tip: 'Latency and cost per call matter more than raw smarts. Cache aggressively; keep the model close to the user.',
+  },
+  {
+    id: 'chat',
+    label: 'Chat & Q&A',
+    sub: 'general assistant',
+    tier: 'mid',
+    why: 'Most conversational turns need fluency and broad knowledge, not deep multi-step reasoning. A mid-tier model is the default workhorse — good answers at a fraction of frontier cost.',
+    tip: 'Escalate to a frontier model only for the turns that actually need it (see routing).',
+  },
+  {
+    id: 'summarize',
+    label: 'Summarize / rewrite',
+    sub: 'transform text',
+    tier: 'small',
+    why: 'Summarizing, reformatting, and tone changes are shallow transforms — the answer is mostly *in* the input. Small models do this well and cheaply.',
+    tip: 'Cap the output length. Give one clear example of the format you want.',
+  },
+  {
+    id: 'classify',
+    label: 'Classify / extract',
+    sub: 'high volume',
+    tier: 'small',
+    why: 'Narrow, repetitive, high-volume work — routing tickets, tagging, pulling fields from documents. Paying a frontier price per row is money on fire.',
+    tip: 'A small or fine-tuned model wins; run it through the batch API and use structured output.',
+  },
+  {
+    id: 'reasoning',
+    label: 'Hard reasoning & math',
+    sub: 'multi-step',
+    tier: 'frontier',
+    why: 'Long chains where one wrong step derails the whole answer — proofs, tricky analysis, planning. This is exactly what reasoning-tier models are for; a cheap model fails silently and confidently.',
+    tip: 'Pay for capability here. The expensive answer that is right beats three cheap answers that are wrong.',
+  },
+  {
+    id: 'coding',
+    label: 'Agentic coding',
+    sub: 'tools + many turns',
+    tier: 'frontier',
+    why: 'A long tool loop compounds errors — a weak model takes more turns, and every turn re-reads the whole transcript, so a "cheaper" model can cost *more* end to end. Capability buys back turns.',
+    tip: 'Measure end-to-end task cost, not per-call cost. This is the local-metric trap below.',
+  },
+  {
+    id: 'longdoc',
+    label: 'Long-document analysis',
+    sub: 'big context',
+    tier: 'frontier',
+    why: 'The binding constraint is context window and recall across a lot of text, not raw cleverness. Reach for a model with a large, reliable context — often a frontier or long-context model.',
+    tip: 'Retrieve the relevant slices first (RAG) instead of stuffing everything — cheaper and often more accurate.',
+  },
+  {
+    id: 'creative',
+    label: 'Creative & marketing copy',
+    sub: 'style over rigor',
+    tier: 'mid',
+    why: 'Style, voice, and fluency matter more than provable correctness. Mid-tier models write well and cheaply; frontier models rarely write *enough* better to justify the price.',
+    tip: 'Spend your budget on iterations and good prompts, not on the biggest model.',
+  },
+  {
+    id: 'bulk',
+    label: 'Bulk offline jobs',
+    sub: 'no latency need',
+    tier: 'small',
+    why: 'Nightly enrichment, backfills, evals — nobody is waiting on the response. Latency is free to trade away, so use the cheapest model that clears your quality bar.',
+    tip: 'Async batch endpoints are typically ~50% cheaper. If quality wobbles, cascade: cheap first, escalate only the failures.',
+  },
+];
+
+const TIERS = {
+  small: { label: 'Small / fast', k: 'small' },
+  mid: { label: 'Mid tier', k: 'mid' },
+  frontier: { label: 'Frontier', k: 'frontier' },
+};
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="tmm">
+      {tasks.map((t, i) => (
+        <input
+          type="radio"
+          name="task-model-match"
+          id={`tmm-${t.id}`}
+          class="tmm__radio"
+          checked={i === 0}
+        />
+      ))}
+
+      <div class="tmm__grid" role="tablist" aria-label="Tasks">
+        {tasks.map((t) => (
+          <label class="tmm__node" for={`tmm-${t.id}`}>
+            <span class="tmm__node-t">{t.label}</span>
+            <span class="tmm__node-s">{t.sub}</span>
+          </label>
+        ))}
+      </div>
+
+      <div class="tmm__panels">
+        {tasks.map((t) => (
+          <div class="tmm__panel" data-for={t.id}>
+            <div class="tmm__head">
+              <span class="tmm__reco">Reach for</span>
+              <span class={`tmm__tier tmm__tier--${TIERS[t.tier].k}`}>{TIERS[t.tier].label}</span>
+            </div>
+            <p class="tmm__row"><span class="tmm__row-k">Why</span> <span set:html={fmt(t.why)} /></p>
+            <p class="tmm__row tmm__row--tip"><span class="tmm__row-k">Tip</span> <span set:html={fmt(t.tip)} /></p>
+          </div>
+        ))}
+      </div>
+
+      <p class="tmm__hint">Pick a task. The <b>tier</b> is a starting point, not a law — green is small/fast, blue is the mid-tier workhorse, red is frontier. Most systems mix all three.</p>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .tmm { margin: 0; }
+  .tmm__radio { position: absolute; opacity: 0; pointer-events: none; }
+
+  .tmm__grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.4rem; margin-bottom: 1rem;
+  }
+  .tmm__node {
+    display: flex; flex-direction: column; gap: 0.1rem; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.7rem;
+    transition: all 0.18s var(--ease); min-width: 0;
+  }
+  .tmm__node:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .tmm__node-t { font-weight: 650; font-size: 0.85rem; color: var(--text); }
+  .tmm__node-s {
+    font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+
+  .tmm__panels { position: relative; }
+  .tmm__panel { display: none; }
+  .tmm__panel {
+    border: 1px solid var(--border); background: var(--bg-subtle);
+    border-radius: var(--radius-sm); padding: 0.9rem 1rem;
+  }
+
+  .tmm__head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; }
+  .tmm__reco {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 700; color: var(--text-faint);
+  }
+  .tmm__tier {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+    padding: 0.18em 0.7em; border-radius: 999px; border: 1px solid var(--border);
+  }
+  .tmm__tier--small { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .tmm__tier--mid { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .tmm__tier--frontier { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+
+  .tmm__row { font-size: 0.9rem; line-height: 1.65; color: var(--text-muted); margin: 0.35rem 0 0; }
+  .tmm__row-k {
+    font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.04em;
+    text-transform: uppercase; font-weight: 700; color: var(--text); margin-right: 0.35rem;
+  }
+  .tmm__row--tip .tmm__row-k { color: var(--gpt-c2); }
+  .tmm__row code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .tmm__hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.9rem 0 0; }
+
+  /* CSS-only wiring: checked task highlights its node and reveals its panel */
+  #tmm-autocomplete:checked ~ .tmm__grid label[for="tmm-autocomplete"],
+  #tmm-chat:checked ~ .tmm__grid label[for="tmm-chat"],
+  #tmm-summarize:checked ~ .tmm__grid label[for="tmm-summarize"],
+  #tmm-classify:checked ~ .tmm__grid label[for="tmm-classify"],
+  #tmm-reasoning:checked ~ .tmm__grid label[for="tmm-reasoning"],
+  #tmm-coding:checked ~ .tmm__grid label[for="tmm-coding"],
+  #tmm-longdoc:checked ~ .tmm__grid label[for="tmm-longdoc"],
+  #tmm-creative:checked ~ .tmm__grid label[for="tmm-creative"],
+  #tmm-bulk:checked ~ .tmm__grid label[for="tmm-bulk"] {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm);
+  }
+  #tmm-autocomplete:checked ~ .tmm__panels .tmm__panel[data-for="autocomplete"],
+  #tmm-chat:checked ~ .tmm__panels .tmm__panel[data-for="chat"],
+  #tmm-summarize:checked ~ .tmm__panels .tmm__panel[data-for="summarize"],
+  #tmm-classify:checked ~ .tmm__panels .tmm__panel[data-for="classify"],
+  #tmm-reasoning:checked ~ .tmm__panels .tmm__panel[data-for="reasoning"],
+  #tmm-coding:checked ~ .tmm__panels .tmm__panel[data-for="coding"],
+  #tmm-longdoc:checked ~ .tmm__panels .tmm__panel[data-for="longdoc"],
+  #tmm-creative:checked ~ .tmm__panels .tmm__panel[data-for="creative"],
+  #tmm-bulk:checked ~ .tmm__panels .tmm__panel[data-for="bulk"] {
+    display: block; animation: tmm-fade 0.25s var(--ease);
+  }
+  @keyframes tmm-fade { from { opacity: 0; transform: translateY(4px); } }
+
+  #tmm-autocomplete:focus-visible ~ .tmm__grid label[for="tmm-autocomplete"],
+  #tmm-chat:focus-visible ~ .tmm__grid label[for="tmm-chat"],
+  #tmm-summarize:focus-visible ~ .tmm__grid label[for="tmm-summarize"],
+  #tmm-classify:focus-visible ~ .tmm__grid label[for="tmm-classify"],
+  #tmm-reasoning:focus-visible ~ .tmm__grid label[for="tmm-reasoning"],
+  #tmm-coding:focus-visible ~ .tmm__grid label[for="tmm-coding"],
+  #tmm-longdoc:focus-visible ~ .tmm__grid label[for="tmm-longdoc"],
+  #tmm-creative:focus-visible ~ .tmm__grid label[for="tmm-creative"],
+  #tmm-bulk:focus-visible ~ .tmm__grid label[for="tmm-bulk"] {
+    outline: 2.5px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .tmm__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

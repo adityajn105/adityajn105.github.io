@@ -1,0 +1,15 @@
+---
+// TokenTrap — the local-metric trap made interactive. Drag the compression
+// slider: per-call tokens fall, but past a sweet spot the dropped context
+// forces recovery turns and the whole task gets MORE expensive. Anchors the
+// "local metric trap" subtopic. Numbers are an illustrative teaching model.
+import '../../styles/gpt-widgets.css';
+---
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-token-trap></div>
+  <slot />
+</figure>
+<script>
+  import { mountTokenTrap } from '../../scripts/gpt/llm-efficiency.js';
+  document.querySelectorAll('[data-gpt-token-trap]').forEach((el) => mountTokenTrap(el));
+</script>

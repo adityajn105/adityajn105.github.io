@@ -1,0 +1,15 @@
+---
+// RailFlow — pick an attack and watch it travel through the guardrail stack
+// (input → retrieval → [model] → output → action → runtime). Toggle the rail
+// that catches it and the attack reaches production. The centerpiece widget of
+// the guardrails post. Follows the RouterSim / PhaseSplit mount pattern.
+import '../../styles/gpt-widgets.css';
+---
+<figure class="gpt-figure">
+  <div class="gpt-root" data-gpt-rail-flow></div>
+  <slot />
+</figure>
+<script>
+  import { mountRailFlow } from '../../scripts/gpt/guardrails.js';
+  document.querySelectorAll('[data-gpt-rail-flow]').forEach((el) => mountRailFlow(el));
+</script>

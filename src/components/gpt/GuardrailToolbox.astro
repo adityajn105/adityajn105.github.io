@@ -1,0 +1,264 @@
+---
+// GuardrailToolbox — a clickable catalog of the tools you can actually reach for
+// to build guardrails, grouped by category (Framework / Classifier / Scanner /
+// Cloud / Red-team). Pick a tool; see what it does and when to use it. CSS-only:
+// hidden radios + <label> + `:checked ~` reveals, styles in this component's own
+// scoped <style> (mirrors ThreatCatalog / TechniqueCatalog — no JS file).
+import '../../styles/gpt-widgets.css';
+
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const fmt = (s) => escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+const tools = [
+  {
+    id: 'nemo',
+    label: 'NeMo Guardrails',
+    sub: 'NVIDIA',
+    cat: 'framework',
+    what: 'Programmable rails around your app — input, dialog, retrieval, execution, and output — defined in a small modeling language (Colang).',
+    when: 'You want declarative, dialog-level control and several rail types in one open-source framework.',
+  },
+  {
+    id: 'guardrails-ai',
+    label: 'Guardrails AI',
+    sub: 'validators hub',
+    cat: 'framework',
+    what: 'Wrap an LLM call in a "guard" backed by a hub of validators (PII, toxicity, competitor mentions, format) that can automatically re-ask on failure.',
+    when: 'You want composable input/output validators in Python plus structured-output enforcement.',
+  },
+  {
+    id: 'openai-agents',
+    label: 'OpenAI Agents SDK guardrails',
+    sub: 'tripwires',
+    cat: 'framework',
+    what: 'Input and output guardrail functions with "tripwires" that halt the agent the moment a check fails.',
+    when: 'You\'re building on the OpenAI Agents SDK and want guardrails native to the loop.',
+  },
+  {
+    id: 'llama-guard',
+    label: 'Llama Guard / Prompt Guard',
+    sub: 'Meta PurpleLlama',
+    cat: 'classifier',
+    what: 'Open safety classifiers you can self-host: Llama Guard scores input/output against a safety taxonomy; Prompt Guard flags jailbreaks and injection.',
+    when: 'You want a self-hosted model to moderate content and detect injection, with no per-call API cost.',
+  },
+  {
+    id: 'openai-moderation',
+    label: 'OpenAI Moderation API',
+    sub: 'hosted classifier',
+    cat: 'classifier',
+    what: 'A free hosted classifier that flags text (and images) across harm categories.',
+    when: 'You want quick content moderation on inputs/outputs without hosting a model.',
+  },
+  {
+    id: 'llm-guard',
+    label: 'LLM Guard',
+    sub: 'Protect AI',
+    cat: 'scanner',
+    what: 'A toolkit of pluggable input/output scanners — prompt injection, secrets, PII, toxicity, banned topics, code — you chain into a pipeline.',
+    when: 'You want a batteries-included Python scanner stack in front of and behind the model.',
+  },
+  {
+    id: 'rebuff',
+    label: 'Rebuff',
+    sub: 'self-hardening',
+    cat: 'scanner',
+    what: 'A prompt-injection detector that layers heuristics, an LLM check, canary tokens, and a vector store of known attacks — and learns from attempts.',
+    when: 'Injection detection specifically, where you want it to get better over time.',
+  },
+  {
+    id: 'presidio',
+    label: 'Microsoft Presidio',
+    sub: 'PII',
+    cat: 'scanner',
+    what: 'PII detection and anonymization — recognizers plus reversible de-identification for text.',
+    when: 'The go-to for the PII rail: redact or anonymize personal data on the way in and scrub it on the way out.',
+  },
+  {
+    id: 'bedrock',
+    label: 'AWS Bedrock Guardrails',
+    sub: 'managed',
+    cat: 'cloud',
+    what: 'Configurable content filters, denied topics, word filters, PII redaction, and contextual-grounding + prompt-attack filters applied to any Bedrock model.',
+    when: 'You\'re on AWS and want managed guardrails without wiring your own.',
+  },
+  {
+    id: 'azure',
+    label: 'Azure AI Content Safety',
+    sub: 'Prompt Shields',
+    cat: 'cloud',
+    what: 'Hosted detectors for harmful content, groundedness, and protected material — plus Prompt Shields for direct and indirect (document) injection.',
+    when: 'You\'re on Azure/OpenAI and want managed injection + content filtering.',
+  },
+  {
+    id: 'garak',
+    label: 'Garak',
+    sub: 'NVIDIA · red-team',
+    cat: 'redteam',
+    what: 'An LLM vulnerability scanner that probes for injection, jailbreaks, data leakage, toxicity, and more — an automated attacker for your app.',
+    when: 'You want to *test* your defenses adversarially before shipping. (Pair with Lakera\'s Gandalf to build intuition.)',
+  },
+];
+
+const CATS = {
+  framework: 'Framework',
+  classifier: 'Classifier',
+  scanner: 'Scanner',
+  cloud: 'Cloud',
+  redteam: 'Red-team',
+};
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="tb">
+      {tools.map((t, i) => (
+        <input
+          type="radio"
+          name="guardrail-toolbox"
+          id={`tb-${t.id}`}
+          class="tb__radio"
+          checked={i === 0}
+        />
+      ))}
+
+      <div class="tb__grid" role="tablist" aria-label="Guardrail tools">
+        {tools.map((t) => (
+          <label class="tb__node" for={`tb-${t.id}`}>
+            <span class="tb__node-t">{t.label}</span>
+            <span class="tb__node-s">{t.sub}</span>
+          </label>
+        ))}
+      </div>
+
+      <div class="tb__panels">
+        {tools.map((t) => (
+          <div class="tb__panel" data-for={t.id}>
+            <div class="tb__head">
+              <span class="tb__cat-k">Category</span>
+              <span class={`tb__cat tb__cat--${t.cat}`}>{CATS[t.cat]}</span>
+            </div>
+            <p class="tb__row"><span class="tb__row-k">What</span> <span set:html={fmt(t.what)} /></p>
+            <p class="tb__row tb__row--when"><span class="tb__row-k">When</span> <span set:html={fmt(t.when)} /></p>
+          </div>
+        ))}
+      </div>
+
+      <p class="tb__hint">Click a tool. <b>Frameworks</b> orchestrate rails, <b>classifiers</b> judge content, <b>scanners</b> pattern-match inputs/outputs, <b>cloud</b> options are managed, and <b>red-team</b> tools attack you first. Most real stacks combine several.</p>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .tb { margin: 0; }
+  .tb__radio { position: absolute; opacity: 0; pointer-events: none; }
+
+  .tb__grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.4rem; margin-bottom: 1rem;
+  }
+  .tb__node {
+    display: flex; flex-direction: column; gap: 0.1rem; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.7rem;
+    transition: all 0.18s var(--ease); min-width: 0;
+  }
+  .tb__node:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .tb__node-t { font-weight: 650; font-size: 0.85rem; color: var(--text); }
+  .tb__node-s {
+    font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+
+  .tb__panels { position: relative; }
+  .tb__panel { display: none; }
+  .tb__panel {
+    border: 1px solid var(--border); background: var(--bg-subtle);
+    border-radius: var(--radius-sm); padding: 0.9rem 1rem;
+  }
+
+  .tb__head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; }
+  .tb__cat-k {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 700; color: var(--text-faint);
+  }
+  .tb__cat {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+    padding: 0.18em 0.7em; border-radius: 999px; border: 1px solid var(--border);
+  }
+  .tb__cat--framework { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .tb__cat--classifier { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .tb__cat--scanner {
+    color: color-mix(in srgb, var(--gpt-c2) 55%, var(--accent));
+    border-color: color-mix(in srgb, var(--gpt-c2) 55%, var(--accent));
+    background: color-mix(in srgb, var(--gpt-c2) 10%, transparent);
+  }
+  .tb__cat--cloud {
+    color: color-mix(in srgb, var(--gpt-warn) 45%, var(--accent));
+    border-color: color-mix(in srgb, var(--gpt-warn) 45%, var(--accent));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .tb__cat--redteam { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+
+  .tb__row { font-size: 0.9rem; line-height: 1.65; color: var(--text-muted); margin: 0.35rem 0 0; }
+  .tb__row-k {
+    font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.04em;
+    text-transform: uppercase; font-weight: 700; color: var(--text); margin-right: 0.35rem;
+  }
+  .tb__row--when .tb__row-k { color: var(--gpt-c2); }
+  .tb__row code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .tb__hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.9rem 0 0; }
+
+  /* CSS-only wiring: checked tool highlights its node and reveals its panel */
+  #tb-nemo:checked ~ .tb__grid label[for="tb-nemo"],
+  #tb-guardrails-ai:checked ~ .tb__grid label[for="tb-guardrails-ai"],
+  #tb-openai-agents:checked ~ .tb__grid label[for="tb-openai-agents"],
+  #tb-llama-guard:checked ~ .tb__grid label[for="tb-llama-guard"],
+  #tb-openai-moderation:checked ~ .tb__grid label[for="tb-openai-moderation"],
+  #tb-llm-guard:checked ~ .tb__grid label[for="tb-llm-guard"],
+  #tb-rebuff:checked ~ .tb__grid label[for="tb-rebuff"],
+  #tb-presidio:checked ~ .tb__grid label[for="tb-presidio"],
+  #tb-bedrock:checked ~ .tb__grid label[for="tb-bedrock"],
+  #tb-azure:checked ~ .tb__grid label[for="tb-azure"],
+  #tb-garak:checked ~ .tb__grid label[for="tb-garak"] {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm);
+  }
+  #tb-nemo:checked ~ .tb__panels .tb__panel[data-for="nemo"],
+  #tb-guardrails-ai:checked ~ .tb__panels .tb__panel[data-for="guardrails-ai"],
+  #tb-openai-agents:checked ~ .tb__panels .tb__panel[data-for="openai-agents"],
+  #tb-llama-guard:checked ~ .tb__panels .tb__panel[data-for="llama-guard"],
+  #tb-openai-moderation:checked ~ .tb__panels .tb__panel[data-for="openai-moderation"],
+  #tb-llm-guard:checked ~ .tb__panels .tb__panel[data-for="llm-guard"],
+  #tb-rebuff:checked ~ .tb__panels .tb__panel[data-for="rebuff"],
+  #tb-presidio:checked ~ .tb__panels .tb__panel[data-for="presidio"],
+  #tb-bedrock:checked ~ .tb__panels .tb__panel[data-for="bedrock"],
+  #tb-azure:checked ~ .tb__panels .tb__panel[data-for="azure"],
+  #tb-garak:checked ~ .tb__panels .tb__panel[data-for="garak"] {
+    display: block; animation: tb-fade 0.25s var(--ease);
+  }
+  @keyframes tb-fade { from { opacity: 0; transform: translateY(4px); } }
+
+  #tb-nemo:focus-visible ~ .tb__grid label[for="tb-nemo"],
+  #tb-guardrails-ai:focus-visible ~ .tb__grid label[for="tb-guardrails-ai"],
+  #tb-openai-agents:focus-visible ~ .tb__grid label[for="tb-openai-agents"],
+  #tb-llama-guard:focus-visible ~ .tb__grid label[for="tb-llama-guard"],
+  #tb-openai-moderation:focus-visible ~ .tb__grid label[for="tb-openai-moderation"],
+  #tb-llm-guard:focus-visible ~ .tb__grid label[for="tb-llm-guard"],
+  #tb-rebuff:focus-visible ~ .tb__grid label[for="tb-rebuff"],
+  #tb-presidio:focus-visible ~ .tb__grid label[for="tb-presidio"],
+  #tb-bedrock:focus-visible ~ .tb__grid label[for="tb-bedrock"],
+  #tb-azure:focus-visible ~ .tb__grid label[for="tb-azure"],
+  #tb-garak:focus-visible ~ .tb__grid label[for="tb-garak"] {
+    outline: 2.5px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .tb__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

@@ -1,0 +1,231 @@
+---
+// TechniqueCatalog — a clickable catalog of the "other" efficiency levers that
+// aren't about which model you pick: reuse, context, and throughput tricks.
+// Pick one; see its family, how it works, and what it saves. CSS-only: hidden
+// radios + <label> + `:checked ~` reveals, styles in this component's own scoped
+// <style> (mirrors TechniqueMap — no JS file).
+import '../../styles/gpt-widgets.css';
+
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const fmt = (s) => escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+// family: reuse = pay once, context = send less, throughput = shape the I/O.
+const techniques = [
+  {
+    id: 'prompt-cache',
+    label: 'Prompt caching',
+    sub: 'pay once',
+    family: 'reuse',
+    how: 'Cache the static prefix — system prompt, tool definitions, retrieved docs — so repeated calls only pay full price for the *new* tokens.',
+    saves: 'Cached input is far cheaper and faster. Huge for agents and chat that resend a fixed preamble every turn.',
+  },
+  {
+    id: 'resp-cache',
+    label: 'Semantic response cache',
+    sub: 'pay once',
+    family: 'reuse',
+    how: 'Embed or hash the request; if a near-identical one was answered recently, return the stored answer with no model call at all.',
+    saves: '100% on a cache hit. Ideal for FAQs, popular queries, and idempotent lookups.',
+  },
+  {
+    id: 'rag',
+    label: 'Retrieve, don\'t stuff',
+    sub: 'send less',
+    family: 'context',
+    how: 'Use RAG to fetch the handful of relevant chunks instead of pasting the whole knowledge base into every prompt.',
+    saves: 'Shorter prompts cost less *and* are often more accurate — less irrelevant text for the model to get distracted by.',
+  },
+  {
+    id: 'prune',
+    label: 'Prune the history',
+    sub: 'send less',
+    family: 'context',
+    how: 'Summarize or drop old turns instead of resending the entire conversation on every call.',
+    saves: 'Caps the quadratic blow-up of a long chat — otherwise every turn re-pays for all the turns before it.',
+  },
+  {
+    id: 'compress',
+    label: 'Compress the prompt',
+    sub: 'send less',
+    family: 'context',
+    how: 'Strip boilerplate, dedupe, drop pure noise like line-number prefixes — keep the signal, cut the filler.',
+    saves: 'A few percent per call, losslessly. But measure end to end — over-compressing backfires (see the local-metric trap below).',
+  },
+  {
+    id: 'batch',
+    label: 'Batch API',
+    sub: 'shape the I/O',
+    family: 'throughput',
+    how: 'Submit non-urgent work to an asynchronous batch endpoint instead of firing real-time requests.',
+    saves: 'Typically around half off the per-token price — the discount you get for not needing an answer *right now*.',
+  },
+  {
+    id: 'structured',
+    label: 'Structured output',
+    sub: 'shape the I/O',
+    family: 'throughput',
+    how: 'Constrain responses to a schema (JSON, enum) so the first response parses cleanly instead of triggering a retry.',
+    saves: 'Kills the retry tax — every malformed answer you *don\'t* have to regenerate is a call you never pay for.',
+  },
+  {
+    id: 'caps',
+    label: 'Cap the output',
+    sub: 'shape the I/O',
+    family: 'throughput',
+    how: 'Set `max_tokens` and stop sequences. Output tokens are usually the pricier half of the bill and the slowest to produce.',
+    saves: 'A direct cut to your most expensive tokens, and lower latency as a bonus.',
+  },
+  {
+    id: 'stream',
+    label: 'Stream the response',
+    sub: 'shape the I/O',
+    family: 'throughput',
+    how: 'Stream tokens so the user sees output as it\'s generated instead of waiting for the whole thing.',
+    saves: 'No dollars saved — it buys *perceived* speed, so a slightly cheaper/slower model becomes acceptable to users.',
+  },
+];
+
+const FAMILIES = {
+  reuse: 'Reuse',
+  context: 'Context',
+  throughput: 'Throughput',
+};
+---
+
+<figure class="gpt-figure">
+  <div class="gpt-root">
+    <div class="tc">
+      {techniques.map((t, i) => (
+        <input
+          type="radio"
+          name="technique-catalog"
+          id={`tc-${t.id}`}
+          class="tc__radio"
+          checked={i === 0}
+        />
+      ))}
+
+      <div class="tc__grid" role="tablist" aria-label="Efficiency techniques">
+        {techniques.map((t) => (
+          <label class="tc__node" for={`tc-${t.id}`}>
+            <span class="tc__node-t">{t.label}</span>
+            <span class="tc__node-s">{t.sub}</span>
+          </label>
+        ))}
+      </div>
+
+      <div class="tc__panels">
+        {techniques.map((t) => (
+          <div class="tc__panel" data-for={t.id}>
+            <div class="tc__head">
+              <span class="tc__fam-k">Family</span>
+              <span class={`tc__fam tc__fam--${t.family}`}>{FAMILIES[t.family]}</span>
+            </div>
+            <p class="tc__row"><span class="tc__row-k">How</span> <span set:html={fmt(t.how)} /></p>
+            <p class="tc__row tc__row--saves"><span class="tc__row-k">Saves</span> <span set:html={fmt(t.saves)} /></p>
+          </div>
+        ))}
+      </div>
+
+      <p class="tc__hint">Click a lever. <b>Reuse</b> = pay for the same tokens once, <b>Context</b> = send fewer tokens, <b>Throughput</b> = shape the request/response. They stack — and none of them require a bigger model.</p>
+    </div>
+    <slot />
+  </div>
+</figure>
+
+<style>
+  .tc { margin: 0; }
+  .tc__radio { position: absolute; opacity: 0; pointer-events: none; }
+
+  .tc__grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.4rem; margin-bottom: 1rem;
+  }
+  .tc__node {
+    display: flex; flex-direction: column; gap: 0.1rem; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--bg-elevated);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.7rem;
+    transition: all 0.18s var(--ease); min-width: 0;
+  }
+  .tc__node:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .tc__node-t { font-weight: 650; font-size: 0.85rem; color: var(--text); }
+  .tc__node-s {
+    font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+
+  .tc__panels { position: relative; }
+  .tc__panel { display: none; }
+  .tc__panel {
+    border: 1px solid var(--border); background: var(--bg-subtle);
+    border-radius: var(--radius-sm); padding: 0.9rem 1rem;
+  }
+
+  .tc__head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; }
+  .tc__fam-k {
+    font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.05em;
+    text-transform: uppercase; font-weight: 700; color: var(--text-faint);
+  }
+  .tc__fam {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+    padding: 0.18em 0.7em; border-radius: 999px; border: 1px solid var(--border);
+  }
+  .tc__fam--reuse { color: var(--gpt-c2); border-color: var(--gpt-c2); background: color-mix(in srgb, var(--gpt-c2) 12%, transparent); }
+  .tc__fam--context { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .tc__fam--throughput { color: var(--gpt-warn); border-color: var(--gpt-warn); background: color-mix(in srgb, var(--gpt-warn) 12%, transparent); }
+
+  .tc__row { font-size: 0.9rem; line-height: 1.65; color: var(--text-muted); margin: 0.35rem 0 0; }
+  .tc__row-k {
+    font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.04em;
+    text-transform: uppercase; font-weight: 700; color: var(--text); margin-right: 0.35rem;
+  }
+  .tc__row--saves .tc__row-k { color: var(--gpt-c2); }
+  .tc__row code {
+    font-family: var(--font-mono); font-size: 0.82em; color: var(--accent);
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 0.05em 0.4em; border-radius: 4px;
+  }
+  .tc__hint { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); margin: 0.9rem 0 0; }
+
+  /* CSS-only wiring: checked technique highlights its node and reveals its panel */
+  #tc-prompt-cache:checked ~ .tc__grid label[for="tc-prompt-cache"],
+  #tc-resp-cache:checked ~ .tc__grid label[for="tc-resp-cache"],
+  #tc-rag:checked ~ .tc__grid label[for="tc-rag"],
+  #tc-prune:checked ~ .tc__grid label[for="tc-prune"],
+  #tc-compress:checked ~ .tc__grid label[for="tc-compress"],
+  #tc-batch:checked ~ .tc__grid label[for="tc-batch"],
+  #tc-structured:checked ~ .tc__grid label[for="tc-structured"],
+  #tc-caps:checked ~ .tc__grid label[for="tc-caps"],
+  #tc-stream:checked ~ .tc__grid label[for="tc-stream"] {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: var(--shadow-sm);
+  }
+  #tc-prompt-cache:checked ~ .tc__panels .tc__panel[data-for="prompt-cache"],
+  #tc-resp-cache:checked ~ .tc__panels .tc__panel[data-for="resp-cache"],
+  #tc-rag:checked ~ .tc__panels .tc__panel[data-for="rag"],
+  #tc-prune:checked ~ .tc__panels .tc__panel[data-for="prune"],
+  #tc-compress:checked ~ .tc__panels .tc__panel[data-for="compress"],
+  #tc-batch:checked ~ .tc__panels .tc__panel[data-for="batch"],
+  #tc-structured:checked ~ .tc__panels .tc__panel[data-for="structured"],
+  #tc-caps:checked ~ .tc__panels .tc__panel[data-for="caps"],
+  #tc-stream:checked ~ .tc__panels .tc__panel[data-for="stream"] {
+    display: block; animation: tc-fade 0.25s var(--ease);
+  }
+  @keyframes tc-fade { from { opacity: 0; transform: translateY(4px); } }
+
+  #tc-prompt-cache:focus-visible ~ .tc__grid label[for="tc-prompt-cache"],
+  #tc-resp-cache:focus-visible ~ .tc__grid label[for="tc-resp-cache"],
+  #tc-rag:focus-visible ~ .tc__grid label[for="tc-rag"],
+  #tc-prune:focus-visible ~ .tc__grid label[for="tc-prune"],
+  #tc-compress:focus-visible ~ .tc__grid label[for="tc-compress"],
+  #tc-batch:focus-visible ~ .tc__grid label[for="tc-batch"],
+  #tc-structured:focus-visible ~ .tc__grid label[for="tc-structured"],
+  #tc-caps:focus-visible ~ .tc__grid label[for="tc-caps"],
+  #tc-stream:focus-visible ~ .tc__grid label[for="tc-stream"] {
+    outline: 2.5px solid var(--accent); outline-offset: 2px;
+  }
+
+  @media (max-width: 620px) {
+    .tc__grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
