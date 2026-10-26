@@ -11,6 +11,9 @@ npm-debug.log*
 *.log
 .vscode/
 .idea/
+# private notes, checked out from a private repo at build time (or a
+# local symlink: ln -s ../private-notes .notes)
+.notes
 # env
 .env
 .env.production

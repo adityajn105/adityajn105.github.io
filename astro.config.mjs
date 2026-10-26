@@ -16,6 +16,9 @@ export default defineConfig({
     mdx(),
     sitemap({
       lastmod: new Date(),
+      // Private pages are unlisted; keep them out of the sitemap (which the
+      // chatbot also crawls).
+      filter: (page) => !page.includes('/private/'),
       // Pages are emitted with build.format:'file', so blog routes live at
       // `/blogs/<slug>.html`. Append the extension so sitemap URLs resolve.
       serialize(item) {

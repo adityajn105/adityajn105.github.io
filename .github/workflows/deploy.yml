@@ -18,9 +18,19 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Secrets can't be referenced in `if:` directly.
+      HAS_NOTES_TOKEN: ${{ secrets.NOTES_REPO_TOKEN != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Checkout private notes
+        if: env.HAS_NOTES_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/private-notes
+          token: ${{ secrets.NOTES_REPO_TOKEN }}
+          path: .notes
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -35,6 +45,8 @@ jobs:
           GA4_CREDENTIALS: ${{ secrets.GA4_CREDENTIALS }}
       - name: Build with Astro
         run: npm run build
+        env:
+          NOTES_PASSWORD: ${{ secrets.NOTES_PASSWORD }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

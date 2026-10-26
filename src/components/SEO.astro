@@ -4,6 +4,7 @@ interface Props {
   description: string;
   image?: string;
   type?: 'website' | 'article';
+  noindex?: boolean;
 }
 
 const {
@@ -11,6 +12,7 @@ const {
   description,
   image = '/img/profile.png',
   type = 'website',
+  noindex = false,
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
@@ -25,6 +27,7 @@ const imageUrl = new URL(image, Astro.site).href;
   content="adityajn105, aditya jain, machine learning, deep learning, nlp, reinforcement learning, software engineer, salesforce, usc"
 />
 <link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, nofollow, noarchive" />}
 
 <!-- Open Graph -->
 <meta property="og:type" content={type} />

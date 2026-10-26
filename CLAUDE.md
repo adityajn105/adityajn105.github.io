@@ -169,6 +169,35 @@ variables → Actions):
 
 To refresh `views.json` locally: `GA4_PROPERTY_ID=… GA4_CREDENTIALS="$(cat key.json)" npm run fetch:views`.
 
+## Private notes (`/private/notes`)
+
+Password-protected page. GitHub Pages can't authenticate, so it's **encrypted at build
+time**: `src/pages/private/notes.astro` renders the `notes` collection to HTML, encrypts it
+(AES-256-GCM, key = PBKDF2-SHA256 600k of the password; `src/scripts/notes-crypto.ts`) and
+ships only the ciphertext. The browser decrypts after the password is entered (derived key
+cached in `sessionStorage` until the tab closes / **Lock**).
+
+- **Plaintext never lives in this (public) repo.** Notes are Markdown files in the private
+  repo `adityajn105/private-notes` (local clone: `~/Projects/private-notes`). `deploy.yml`
+  checks it out into `.notes/` (gitignored), which the `notes` collection in
+  `content.config.ts` reads. Locally, `.notes` is a symlink to `../private-notes`.
+- Layout: each top-level folder is a group, each `.md` a topic, rendered as a collapsible
+  `<details>` under a per-group contents list. Current groups: `system-design-notes/`
+  ("System Design") and `ml-system-design-notes/` ("ML System Design"); labels and group
+  order come from `GROUP_LABELS` in `notes.astro`. Frontmatter (all optional): `title`,
+  `order` (position in group), `date`. `README.md` files are skipped.
+- Secrets: `NOTES_PASSWORD` (the password) and `NOTES_REPO_TOKEN` (fine-grained PAT,
+  **Contents: read-only** on `private-notes` only). Either missing ⇒ the page builds with
+  no notes (never plaintext).
+- Unlisted: excluded from the sitemap, `noindex`, and `BaseLayout`'s `isPrivate` prop drops
+  GA and the chatbot widget (third-party scripts shouldn't see decrypted content). Don't
+  link to it from the site or add it to `robots.txt` (that would advertise the path).
+- Editing notes in `private-notes` doesn't trigger a deploy — re-run this repo's workflow
+  (Actions → Deploy → *Run workflow*) or push here.
+- Local test: `NOTES_PASSWORD=… npm run build` (reads the symlinked notes repo).
+- Security = password strength (the ciphertext is public and can be brute-forced offline).
+  Use a long random passphrase. Relative image links in notes won't resolve.
+
 ## Theming & color palettes
 
 Two independent axes on `<html>`, both persisted to `localStorage` and applied pre-paint

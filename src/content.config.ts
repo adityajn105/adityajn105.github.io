@@ -14,4 +14,17 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+// Private notes, checked out from a private repo into `.notes/` by the deploy
+// workflow. Rendered here but only ever published encrypted (see
+// src/pages/private/notes.astro). Missing directory => empty collection.
+const notes = defineCollection({
+  loader: glob({ pattern: ['**/*.md', '!**/README.md'], base: './.notes' }),
+  schema: z.object({
+    title: z.string().optional(),
+    date: z.coerce.date().optional(),
+    // Position within its folder's group on the page (lower first).
+    order: z.number().optional(),
+  }),
+});
+
+export const collections = { blog, notes };

@@ -12,8 +12,11 @@ interface Props {
   description: string;
   image?: string;
   type?: 'website' | 'article';
+  // Private pages: noindex, and no third-party scripts (GA, chatbot widget)
+  // that could see decrypted content.
+  isPrivate?: boolean;
 }
-const { title, description, image, type } = Astro.props;
+const { title, description, image, type, isPrivate = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -45,8 +48,8 @@ const { title, description, image, type } = Astro.props;
       })();
     </script>
 
-    <SEO title={title} description={description} image={image} type={type} />
-    <Analytics />
+    <SEO title={title} description={description} image={image} type={type} noindex={isPrivate} />
+    {!isPrivate && <Analytics />}
     <slot name="head" />
   </head>
   <body>
@@ -91,12 +94,17 @@ const { title, description, image, type } = Astro.props;
       }
     </style>
     <!-- Portfolio chatbot widget -->
-      <script
-        is:inline
-        src="https://chat.adityajain.me/widget.js"
-        data-api="https://portfolio-chatbot-biow.onrender.com"
-        data-title="Chat with Aditya!!"
-        data-accent="#f0b429"
-        defer></script>
+    {
+      !isPrivate && (
+        <script
+          is:inline
+          src="https://chat.adityajain.me/widget.js"
+          data-api="https://portfolio-chatbot-biow.onrender.com"
+          data-title="Chat with Aditya!!"
+          data-accent="#f0b429"
+          defer
+        ></script>
+      )
+    }
   </body>
 </html>

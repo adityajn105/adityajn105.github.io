@@ -1,0 +1,128 @@
+---
+// Long-form typography for rendered Markdown (blog posts, private notes).
+// Extra attributes (id, data-*) are forwarded to the wrapper so the content
+// can also be injected at runtime and still pick up these styles.
+const attrs = Astro.props;
+---
+
+<div class="prose" {...attrs}>
+  <slot />
+</div>
+
+<style>
+  .prose {
+    font-size: 1.06rem;
+    line-height: 1.75;
+    color: var(--text);
+  }
+  .prose :global(h2) {
+    font-size: 1.6rem;
+    margin-top: 2.6rem;
+    margin-bottom: 1rem;
+    scroll-margin-top: 5rem;
+  }
+  .prose :global(h3) {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.8rem;
+  }
+  .prose :global(p) {
+    margin-bottom: 1.25rem;
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    margin-bottom: 1.25rem;
+    padding-left: 1.4rem;
+  }
+  .prose :global(li) {
+    margin-bottom: 0.4rem;
+  }
+  .prose :global(li::marker) {
+    color: var(--text-faint);
+  }
+  .prose :global(a) {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--accent-soft);
+  }
+  .prose :global(a:hover) {
+    text-decoration-color: var(--accent);
+  }
+  .prose :global(img) {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin: 2rem auto;
+    background: var(--bg-elevated);
+  }
+  .prose :global(blockquote) {
+    border-left: 3px solid var(--accent);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .prose :global(strong) {
+    font-weight: 650;
+  }
+  /* Inline code */
+  .prose :global(:not(pre) > code) {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    padding: 0.1em 0.4em;
+    border-radius: 6px;
+  }
+  /* Code blocks (Shiki dual-theme) */
+  .prose :global(pre) {
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .prose :global(pre) :global(code) {
+    font-family: var(--font-mono);
+  }
+  /* Tables */
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .prose :global(th) {
+    background: var(--bg-subtle);
+  }
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-block: 2rem;
+  }
+  /* Math overflow on small screens */
+  .prose :global(.katex-display) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.4rem;
+  }
+</style>
+
+<style is:global>
+  /* Shiki dual-theme: swap variables when the dark theme is active */
+  html[data-theme='dark'] .astro-code,
+  html[data-theme='dark'] .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+</style>
